@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-// mod vec3;
-// use vec3::Vec3;
 use crate::vec3::Vec3;
 
 pub trait RayIntersect {
@@ -30,7 +28,7 @@ impl Sphere {
 impl RayIntersect for Sphere {
     fn intersect(&self, ray_origin: Vec3, ray_dir: Vec3) -> Option<f32> {
         let L = self.position - ray_origin;
-        
+
         let tca = L.dot(ray_dir);
 
         if tca < 0.0 {
