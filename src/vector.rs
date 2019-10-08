@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::ops;
+use std::{ops, fmt};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector (f32, f32, f32, f32);
@@ -34,6 +34,10 @@ impl Vector {
         )
     }
 
+    pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self (x, y, z, w)
+    }
+
     pub fn x (self) -> f32 {
         self.0
     }
@@ -48,6 +52,12 @@ impl Vector {
 
     pub fn w (self) -> f32 {
         self.3
+    }
+}
+
+impl fmt::Display for Vector {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
     }
 }
 

@@ -1,10 +1,12 @@
 mod ppm;
 use ppm::*;
 mod vector;
+mod matrix;
 mod geometry;
 mod ray_tracer;
 
 use vector::Vector;
+use matrix::Matrix;
 use geometry::Sphere;
 use geometry::RayIntersect;
 use ray_tracer::cast_ray;
@@ -42,6 +44,7 @@ fn main() {
     scene.push(Box::new(sphere3));
 
     let origin = Vector::vec3(0.0, 0.0, 0.0);
+    println!("vector: {} ", origin);
 
     for x in 0..image.width {
             let p_x = (2.0 * ((x as f32 + 0.5) / image.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
@@ -62,6 +65,9 @@ fn main() {
             buffer.set_pixel(x, y, color);
         }
     } 
+
+    let matrix = Matrix::identity();
+    println!("matrix: {} ", matrix);
 
     buffer.write_file("image.ppm").expect("Failed Writing File");
 }
