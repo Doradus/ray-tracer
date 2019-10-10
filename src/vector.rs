@@ -125,3 +125,15 @@ impl ops::Div<Vector> for Vector {
         )
     }
 }
+
+impl From<(f32, f32, f32, f32)> for Vector {
+    fn from(tuple: (f32, f32, f32, f32)) -> Self {
+        Self (tuple.0, tuple.1, tuple.2, tuple.3)
+    }
+}
+
+impl From<Vector> for (f32, f32, f32, f32) {
+    fn from(v: Vector) -> Self {
+        (v.0, v.1, v.2, v.3)
+    }
+}

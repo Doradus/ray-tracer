@@ -66,8 +66,30 @@ fn main() {
         }
     } 
 
-    let matrix = Matrix::identity();
-    println!("matrix: {} ", matrix);
+    let m_1 = Matrix::from_vector(
+        Vector::vec4(4.0, 2.0, 0.0, 1.0),
+        Vector::vec4(5.0, 1.0, 2.0, 6.0),
+        Vector::vec4(3.0, 2.0, 1.0, 0.0),
+        Vector::vec4(1.0, 6.0, 4.0, 2.0),
+    );
+
+    let m_2 = m_1.transpose();
+
+    // let m_2 = Matrix::from_vector(
+    //     Vector::vec4(1.0, 7.0, 3.0, 6.0),
+    //     Vector::vec4(5.0, 2.0, 5.0, 1.0),
+    //     Vector::vec4(7.0, 3.0, 0.0, 7.0),
+    //     Vector::vec4(3.0, 4.0, 3.0, 2.0),
+    // );
+
+    // let m_3 = m_1 * m_2;
+
+    // let matrix = Matrix::identity();
+
+
+    println!("original: {} ", m_1);
+
+    println!("transposed: {} ", m_2);
 
     buffer.write_file("image.ppm").expect("Failed Writing File");
 }
