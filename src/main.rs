@@ -67,13 +67,13 @@ fn main() {
     } 
 
     let m_1 = Matrix::from_vector(
-        Vector::vec4(4.0, 2.0, 0.0, 1.0),
-        Vector::vec4(5.0, 1.0, 2.0, 6.0),
-        Vector::vec4(3.0, 2.0, 1.0, 0.0),
-        Vector::vec4(1.0, 6.0, 4.0, 2.0),
+        Vector::vec4(2.0, 1.0, 0.0, 6.0),
+        Vector::vec4(7.0, 8.0, 13.0, 2.0),
+        Vector::vec4(8.0, 6.0, 0.0, 9.0),
+        Vector::vec4(0.0, -2.0, 5.0, -1.0),
     );
 
-    let m_2 = m_1.transpose();
+    let det = m_1.determinant();
 
     // let m_2 = Matrix::from_vector(
     //     Vector::vec4(1.0, 7.0, 3.0, 6.0),
@@ -87,9 +87,7 @@ fn main() {
     // let matrix = Matrix::identity();
 
 
-    println!("original: {} ", m_1);
-
-    println!("transposed: {} ", m_2);
+    println!("original: {} ", det);
 
     buffer.write_file("image.ppm").expect("Failed Writing File");
 }
