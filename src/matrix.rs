@@ -36,25 +36,20 @@ impl Matrix {
     pub fn determinant(&self) -> f32 {
         let (m00, m01, m02, m03) = self.row_1.into();
         let (m10, m11, m12, m13) = self.row_2.into();
-        let (m20, m21, m22, m23) = self.row_3.into();
+        let (m20, m21, m22, m23) = self.row_3.into(); 
         let (m30, m31, m32, m33) = self.row_4.into();
 
-        let m00m11 = m00 * m11;
-        let m22m33 = m22 * m33;
-        let m00m21 = m00 * m21;
-        let m32m13 = m32 * m13;
-        let m00m31 = m00 * m31;
-        let m12m23 = m12 * m23;
+        let a = m22 * m33 - m23 * m32;
+        let b = m12 * m33 - m13 * m32;
+        let c = m12 * m23 - m13 * m22;
+        let d = m02 * m33 - m03 * m32;
+        let e = m02 * m23 - m03 * m22;
+        let f = m02 * m13 - m03 * m12;
 
-
-        m00m11 * m22m33 + m00m21 * m32m13 + m00m31 * m12 * m23 +
-        m10 * m01 * m32 * m23 + m10 * m21 * m02 * m33 + m10 * m31 * m22 * m03 +
-        m20 * m01 * m12 * m33 + m20 * m11 * m32 * m03 + m20 * m31 * m02 * m13 +
-        m30 * m01 * m22 * m13 + m30 * m11 * m02 * m23 + m30 * m21 * m12 * m03 -
-        m00m11 * m32 * m23 - m00m21 * m12 * m33 - m00m31 * m22 * m13 -
-        m10 * m01 * m22m33 - m10 * m21 * m32 * m03 - m10 * m31 * m02 * m23 -
-        m20 * m01 * m32m13 - m20 * m11 * m02 * m33 - m20 * m31 * m12 * m03 -
-        m30 * m01 * m12 * m23 - m30 * m11 * m22 * m03 - m30 * m21 * m02 * m13
+        m00 * (m11 * a - m21 * b + m31 * c) -
+			m10 * (m01 * a - m21 * d + m31 * e) +
+			m20 * (m01 * b - m11 * d + m31 * f) -
+			m30 * (m01 * c - m11 * e + m21 * f)
     }
 
     pub fn transpose(&self) -> Self {
