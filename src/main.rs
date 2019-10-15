@@ -8,6 +8,7 @@ mod ray_tracer;
 use vector::Vector;
 use matrix::Matrix;
 use geometry::Sphere;
+use geometry::Vertex;
 use geometry::RayIntersect;
 use ray_tracer::cast_ray;
 use std::f32::consts;
@@ -34,14 +35,16 @@ fn main() {
 
     println!("Aspect ratio: {}", aspect_ratio);
 
-    let sphere1 = Sphere::new(Vector::vec3(255.0, 0.0, 255.0), Vector::vec3(0.0, 0.3, -2.3), 0.3);
-    let sphere2 = Sphere::new(Vector::vec3(20.0, 165.0, 201.0), Vector::vec3(0.8, 0.0, -2.8), 0.4);
-    let sphere3 = Sphere::new(Vector::vec3(201.0, 103.0, 4.0), Vector::vec3(-0.2, 0.0, -1.3), 0.1);
+    // let sphere1 = Sphere::new(Vector::vec3(255.0, 0.0, 255.0), Vector::vec3(0.0, 0.3, -2.3), 0.3);
+    // let sphere2 = Sphere::new(Vector::vec3(20.0, 165.0, 201.0), Vector::vec3(0.8, 0.0, -2.8), 0.4);
+    // let sphere3 = Sphere::new(Vector::vec3(201.0, 103.0, 4.0), Vector::vec3(-0.2, 0.0, -1.3), 0.1);
 
-    let mut scene: Vec<Box<dyn RayIntersect>> = Vec::new();
-    scene.push(Box::new(sphere1));
-    scene.push(Box::new(sphere2));
-    scene.push(Box::new(sphere3));
+    // let mut scene: Vec<Box<dyn RayIntersect>> = Vec::new();
+    // scene.push(Box::new(sphere1));
+    // scene.push(Box::new(sphere2));
+    // scene.push(Box::new(sphere3));
+
+    let tri = vec![Vertex{pos: Vector::vec3(-1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(0.0,  1.0, -5.0)}];
 
     let origin = Vector::vec3(0.0, 0.0, 0.0);
     println!("vector: {} ", origin);
@@ -54,7 +57,7 @@ fn main() {
             let dir = Vector::vec3(p_x, p_y, -1.0);
             let dir = dir.vec3_normalize();
 
-            let ray_color = cast_ray(origin, dir, &scene);
+            let ray_color = cast_ray(origin, dir, &tri);
 
             let color = RGB {
                 r: ray_color.x() as u8,
@@ -86,8 +89,12 @@ fn main() {
 
     // let matrix = Matrix::identity();
 
+    let test_1 = Vector::vec3(5.0, 2.0, 1.0);
+    let test_2 = Vector::vec3(3.0, 1.0, 7.0);
 
-    println!("original: {} ", det);
+    let cross = test_1.vec3_cross(test_2);
+
+    println!("cross: {} ", cross);
 
     buffer.write_file("image.ppm").expect("Failed Writing File");
 }
