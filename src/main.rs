@@ -7,9 +7,8 @@ mod ray_tracer;
 
 use vector::Vector;
 use matrix::Matrix;
-use geometry::Sphere;
-use geometry::Vertex;
-use geometry::RayIntersect;
+use geometry::{Vertex, create_sphere};
+use std::time::{Duration, Instant};
 use ray_tracer::cast_ray;
 use std::f32::consts;
 
@@ -33,22 +32,10 @@ fn main() {
 
     let aspect_ratio = image.width as f32 / image.height as f32;
 
-    println!("Aspect ratio: {}", aspect_ratio);
-
-    // let sphere1 = Sphere::new(Vector::vec3(255.0, 0.0, 255.0), Vector::vec3(0.0, 0.3, -2.3), 0.3);
-    // let sphere2 = Sphere::new(Vector::vec3(20.0, 165.0, 201.0), Vector::vec3(0.8, 0.0, -2.8), 0.4);
-    // let sphere3 = Sphere::new(Vector::vec3(201.0, 103.0, 4.0), Vector::vec3(-0.2, 0.0, -1.3), 0.1);
-
-    // let mut scene: Vec<Box<dyn RayIntersect>> = Vec::new();
-    // scene.push(Box::new(sphere1));
-    // scene.push(Box::new(sphere2));
-    // scene.push(Box::new(sphere3));
-
     let tri = vec![Vertex{pos: Vector::vec3(-1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(0.0,  1.0, -5.0)}];
-
     let origin = Vector::vec3(0.0, 0.0, 0.0);
-    println!("vector: {} ", origin);
 
+    let now = Instant::now();
     for x in 0..image.width {
             let p_x = (2.0 * ((x as f32 + 0.5) / image.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
         for y in 0..image.height {
@@ -67,34 +54,9 @@ fn main() {
 
             buffer.set_pixel(x, y, color);
         }
-    } 
+    }
 
-    let m_1 = Matrix::from_vector(
-        Vector::vec4(2.0, 7.0, 0.0, 6.0),
-        Vector::vec4(7.0, 8.0, 13.0, 2.0),
-        Vector::vec4(8.0, 6.0, 0.0, 9.0),
-        Vector::vec4(0.0, -2.0, 5.0, -1.0),
-    );
-
-    let det = m_1.determinant();
-
-    // let m_2 = Matrix::from_vector(
-    //     Vector::vec4(1.0, 7.0, 3.0, 6.0),
-    //     Vector::vec4(5.0, 2.0, 5.0, 1.0),
-    //     Vector::vec4(7.0, 3.0, 0.0, 7.0),
-    //     Vector::vec4(3.0, 4.0, 3.0, 2.0),
-    // );
-
-    // let m_3 = m_1 * m_2;
-
-    // let matrix = Matrix::identity();
-
-    let test_1 = Vector::vec3(5.0, 2.0, 1.0);
-    let test_2 = Vector::vec3(3.0, 1.0, 7.0);
-
-    let cross = test_1.vec3_cross(test_2);
-
-    println!("cross: {} ", cross);
-
+    let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
+    println!("image generated in: {} seconds", end);
     buffer.write_file("image.ppm").expect("Failed Writing File");
 }
