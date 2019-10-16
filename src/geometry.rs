@@ -2,70 +2,23 @@
 
 use crate::vector::Vector;
 use std::f32;
-
-pub trait RayIntersect {
-    fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> Option<f32>;
-    fn get_color(&self) -> Vector;
-}
-
-pub struct Sphere {
-    pub color: Vector,
-    pub position: Vector,
-    pub radius: f32,
-    radius_sqrd: f32
-}
-
-impl Sphere {
-    pub fn new(color: Vector, position: Vector, radius: f32) -> Self {
-        Sphere {
-            color: color,
-            position: position,
-            radius: radius,
-            radius_sqrd: radius * radius 
-        }
-    }
-}
-
-impl RayIntersect for Sphere {
-    fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> Option<f32> {
-        let L = self.position - ray_origin;
-
-        let tca = L.vec3_dot(ray_dir);
-
-        if tca < 0.0 {
-            return None;
-        }
-
-        let d2 = L.vec3_dot(L) - tca * tca;
-
-        if d2 > self.radius_sqrd {
-            return None;            
-        }
-
-        let mut t0;
-        let t1;
-
-        let thc = (self.radius_sqrd - d2).sqrt(); 
-        t0 = tca - thc; 
-        t1 = tca + thc; 
-
-        if t0 < 0.0 { 
-            t0 = t1;
-            if t0 < 0.0 {
-                return None;                 
-            } 
-        }
-
-        Some(t0) 
-    }
-
-    fn get_color(&self) -> Vector {
-        self.color
-    }
-}
+use std::f32::consts;
 
 pub struct Vertex {
     pub pos: Vector
+}
+
+impl Vertex {
+    pub fn new(pos: Vector) -> Self {
+        Self {
+            pos: pos
+        }
+    }
+}
+
+pub struct Mesh {
+    pub vertices:Vec<Vertex>,
+    pub indices:Vec<u32>
 }
 
 pub struct IntersectResult {
@@ -106,4 +59,70 @@ pub fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1:
     let result = IntersectResult{u: u, v: v, t: t};
 
     Some(result)
+}
+
+pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
+    let top_vertex = Vertex::new(Vector::vec3(0.0, radius, 0.0));
+	let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, 0.0));
+
+	let mut vertices = Vec::new();
+    vertices.push(top_vertex);
+
+    let mut indices = Vec::new();
+
+	let phi_step = consts::PI / stacks as f32;
+	let theta_step = consts::PI * 2.0 / slices as f32;
+
+    for i in 1..stacks {
+        let phi = phi_step * i as f32;
+        for j in 0..slices {
+			let theta = theta_step * j as f32;
+
+			let vertex = Vertex::new(Vector::vec3(
+                radius * phi.sin() * theta.cos(),
+                radius * phi.cos(),
+                radius * phi.sin() * theta.sin())
+            );
+
+            vertices.push(vertex);
+        }
+    }
+
+    vertices.push(bottom_vertex);
+
+    for i in 1..slices {
+        indices.push(0);
+        indices.push(i);
+        indices.push(0);
+    }
+
+    let offset = 1;
+	let ring_vertex = slices + 1;
+    let stack_end = stacks - 2;
+
+	for i in 0..stack_end {
+		for j in 0..slices {
+			indices.push(offset + ring_vertex * i + j);
+			indices.push(offset + ring_vertex * i + j + 1);
+			indices.push(offset + ring_vertex * (i + 1) + j);
+
+			indices.push(offset + ring_vertex * (i + 1) + j);
+			indices.push(offset + ring_vertex * i + j + 1);
+			indices.push(offset + ring_vertex * (i + 1) + j + 1);
+		}
+	}
+
+    let bottom_vertex_index = vertices.len() as u32 - 1;
+	let offset = bottom_vertex_index - ring_vertex;
+
+	for i in 0..slices {
+		indices.push(bottom_vertex_index);
+		indices.push(offset + i);
+		indices.push(offset + i + 1);
+	}
+
+    Mesh {
+        vertices: vertices,
+        indices: indices
+    }
 }
