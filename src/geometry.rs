@@ -18,16 +18,17 @@ impl Vertex {
 
 pub struct Mesh {
     pub vertices:Vec<Vertex>,
-    pub indices:Vec<u32>
+    pub indices:Vec<u32>,
+    pub num_tris:u32
 }
 
-pub struct IntersectResult {
+pub struct TriangleIntersectResult {
     pub u: f32,
     pub v: f32, 
     pub t: f32
 }
 
-pub fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector) -> Option<IntersectResult> {
+pub fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector) -> Option<TriangleIntersectResult> {
     let v_01 = v_1 - v_0;
     let v_02 = v_2 - v_0;
 
@@ -56,14 +57,32 @@ pub fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1:
 
     let t = v_02.vec3_dot(q_vec) * inv_det;
 
-    let result = IntersectResult{u: u, v: v, t: t};
+    let result = TriangleIntersectResult{u: u, v: v, t: t};
 
     Some(result)
 }
 
+pub fn create_triangle() -> Mesh {
+	let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    vertices.push(Vertex::new(Vector::vec3(-1.0, -1.0, -5.0)));
+    vertices.push(Vertex::new(Vector::vec3(1.0, -1.0, -5.0)));
+    vertices.push(Vertex::new(Vector::vec3(0.0, 1.0, -5.0)));
+
+    indices.push(0);
+    indices.push(1);
+    indices.push(2);
+
+    Mesh {
+        vertices: vertices,
+        indices: indices,
+        num_tris: 1
+    }
+}
+
 pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
-    let top_vertex = Vertex::new(Vector::vec3(0.0, radius, 0.0));
-	let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, 0.0));
+    let top_vertex = Vertex::new(Vector::vec3(0.0, radius, -5.0));
+	let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, -5.0));
 
 	let mut vertices = Vec::new();
     vertices.push(top_vertex);
@@ -72,16 +91,18 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
 
 	let phi_step = consts::PI / stacks as f32;
 	let theta_step = consts::PI * 2.0 / slices as f32;
+    let slices_plus_one = slices + 1;
 
     for i in 1..stacks {
         let phi = phi_step * i as f32;
-        for j in 0..slices {
+        for j in 0..slices_plus_one {
 			let theta = theta_step * j as f32;
 
 			let vertex = Vertex::new(Vector::vec3(
                 radius * phi.sin() * theta.cos(),
                 radius * phi.cos(),
-                radius * phi.sin() * theta.sin())
+                radius * phi.sin() * theta.sin() - 5.0
+                )
             );
 
             vertices.push(vertex);
@@ -90,10 +111,11 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
 
     vertices.push(bottom_vertex);
 
-    for i in 1..slices {
+    let slices_end = slices + 1;
+    for i in 1..slices_end {
         indices.push(0);
+        indices.push(i + 1);
         indices.push(i);
-        indices.push(0);
     }
 
     let offset = 1;
@@ -121,8 +143,10 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
 		indices.push(offset + i + 1);
 	}
 
+    let tris = (stacks - 2) * slices * 2 + slices * 2; 
     Mesh {
         vertices: vertices,
-        indices: indices
+        indices: indices,
+        num_tris: tris
     }
 }

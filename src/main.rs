@@ -7,7 +7,7 @@ mod ray_tracer;
 
 use vector::Vector;
 use matrix::Matrix;
-use geometry::{Vertex, create_sphere};
+use geometry::{Vertex, create_sphere, create_triangle};
 use std::time::{Duration, Instant};
 use ray_tracer::cast_ray;
 use std::f32::consts;
@@ -23,7 +23,6 @@ impl Image {
     }
 }
 
-
 fn main() {
     let image = Image::new(1024, 1024);
     let fov = 40.0 * (consts::PI / 180.0); 
@@ -32,12 +31,13 @@ fn main() {
 
     let aspect_ratio = image.width as f32 / image.height as f32;
 
-    let tri = vec![Vertex{pos: Vector::vec3(-1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(1.0, -1.0, -5.0)}, Vertex{pos: Vector::vec3(0.0,  1.0, -5.0)}];
+    let tri = vec![create_sphere(0.5, 20, 10)];
+    // let tri = vec![create_triangle()];
     let origin = Vector::vec3(0.0, 0.0, 0.0);
 
     let now = Instant::now();
     for x in 0..image.width {
-            let p_x = (2.0 * ((x as f32 + 0.5) / image.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
+        let p_x = (2.0 * ((x as f32 + 0.5) / image.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
         for y in 0..image.height {
             let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / image.width as f32) * (fov * 0.5).tan(); 
 
