@@ -24,7 +24,7 @@ impl Image {
 }
 
 fn main() {
-    let image = Image::new(1024, 1024);
+    let image = Image::new(512, 512);
     let fov = 40.0 * (consts::PI / 180.0); 
 
     let mut buffer = PPM::new(image.width, image.height);
@@ -32,7 +32,6 @@ fn main() {
     let aspect_ratio = image.width as f32 / image.height as f32;
 
     let tri = vec![create_sphere(0.5, 20, 10)];
-    // let tri = vec![create_triangle()];
     let origin = Vector::vec3(0.0, 0.0, 0.0);
 
     let now = Instant::now();

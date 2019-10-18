@@ -1,5 +1,5 @@
 use crate::vector::Vector;
-use crate::geometry::{intersect_triangle, Mesh};
+use crate::geometry::{Mesh};
 use std::f32;
 
 
@@ -90,4 +90,44 @@ fn intersect_mesh(origin: Vector, direction: Vector, scene_object: &Mesh) -> Opt
         }
 
     found    
+}
+
+struct TriangleIntersectResult {
+    pub u: f32,
+    pub v: f32, 
+    pub t: f32
+}
+
+fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector) -> Option<TriangleIntersectResult> {
+    let v_01 = v_1 - v_0;
+    let v_02 = v_2 - v_0;
+
+    let p = ray_dir.vec3_cross(v_02);
+    let det = v_01.vec3_dot(p);
+
+    if det < f32::EPSILON {
+        return None;
+    }
+
+    let inv_det = 1.0 / det;
+
+    let t_vec = ray_origin - v_0;
+    let u = t_vec.vec3_dot(p) * inv_det;
+
+    if u < 0.0 || u > 1.0 {
+        return None;
+    }
+
+    let q_vec = t_vec.vec3_cross(v_01);
+    let v = ray_dir.vec3_dot(q_vec) * inv_det;
+
+    if v < 0.0 || v + u > 1.0 {
+        return None;
+    }
+
+    let t = v_02.vec3_dot(q_vec) * inv_det;
+
+    let result = TriangleIntersectResult{u: u, v: v, t: t};
+
+    Some(result)
 }
