@@ -60,120 +60,117 @@ impl Matrix {
         let d = m02 * m33 - m03 * m32;
         let e = m02 * m23 - m03 * m22;
         let f = m02 * m13 - m03 * m12;
+        let g = m21 * m33 - m23 * m31;
+        let h = m11 * m33 - m13 * m31;
+        let i = m11 * m23 - m13 * m21;
+        let j = m21 * m32 - m22 * m31;
+        let k = m11 * m32 - m12 * m31;
+        let l = m11 * m22 - m12 * m21;
+        let m = m01 * m33 - m03 * m31;
+        let n = m01 * m23 - m03 * m21;
+        let o = m01 * m13 - m03 * m11;
+        let p = m01 * m32 - m02 * m31;
+        let q = m01 * m22 - m02 * m21;
+        let r = m01 * m12 - m02 * m11;
 
-        let det = m00 * (m11 * a - m21 * b + m31 * c) -
-			m10 * (m01 * a - m21 * d + m31 * e) +
-			m20 * (m01 * b - m11 * d + m31 * f) -
-			m30 * (m01 * c - m11 * e + m21 * f);
+        let det1 = m11 * a - m21 * b + m31 * c;
+        let det2 = m01 * a - m21 * d + m31 * e;
+        let det3 = m01 * b - m11 * d + m31 * f;
+        let det4 = m01 * c - m11 * e + m21 * f;
+
+        let det = m00 * det1 -
+			m10 * det2 +
+			m20 * det3 -
+			m30 * det4;
         
         let r_det = 1.0 / det;
 
-        println!("det: {}", det);
-
-        let result_00 = r_det * (
-            m11 * (m22 * m33 - m23 * m32) -
-            m21 * (m12 * m33 - m13 * m32) +
-            m31 * (m12 * m23 - m13 * m22)
-        );
+        let result_00 = r_det * det1;
 
         let result_01 = -r_det * (
-            m10 * (m22 * m33 - m23 * m32) -
-            m20 * (m12 * m33 - m13 * m32) +
-            m30 * (m12 * m23 - m13 * m22)
+            m10 * a -
+            m20 * b +
+            m30 * c
         );
 
        let result_02 = r_det * (
-            m10 * (m21 * m33 - m23 * m31) -
-            m20 * (m11 * m33 - m13 * m31) +
-            m30 * (m11 * m23 - m13 * m21)
+            m10 * g -
+            m20 * h +
+            m30 * i
         );
 
         let result_03 = -r_det * (
-            m10 * (m21 * m32 - m22 * m31) -
-            m20 * (m11 * m32 - m12 * m31) +
-            m30 * (m11 * m22 - m12 * m21)
+            m10 * j -
+            m20 * k +
+            m30 * l
         );
 
-        let result_10 = -r_det * (
-            m01 * (m22 * m33 - m23 * m32) -
-            m21 * (m02 * m33 - m03 * m32) +
-            m31 * (m02 * m23 - m03 * m22)
-        );
+        let result_10 = -r_det * det2;
 
         let result_11 = r_det * (
-            m00 * (m22 * m33 - m23 * m32) -
-            m20 * (m02 * m33 - m03 * m32) +
-            m30 * (m02 * m23 - m03 * m22)
+            m00 * a -
+            m20 * d +
+            m30 * e
         );
 
         let result_12 = -r_det * (
-            m00 * (m21 * m33 - m23 * m31) -
-            m20 * (m01 * m33 - m03 * m31) +
-            m30 * (m01 * m23 - m03 * m21)
+            m00 * g -
+            m20 * m +
+            m30 * n
         );
 
         let result_13 = r_det * (
-            m00 * (m21 * m32 - m22 * m31) -
-            m20 * (m01 * m32 - m02 * m31) +
-            m30 * (m01 * m22 - m02 * m21)
+            m00 * j -
+            m20 * p +
+            m30 * q
         );
 
-        let result_20 = r_det * (
-            m01 * (m12 * m33 - m13 * m32) -
-            m11 * (m02 * m33 - m03 * m32) +
-            m31 * (m02 * m13 - m03 * m12)
-        );
+        let result_20 = r_det * det3;
 
         let result_21 = -r_det * (
-            m00 * (m12 * m33 - m13 * m32) -
-            m10 * (m02 * m33 - m03 * m32) +
-            m30 * (m02 * m13 - m03 * m12)
+            m00 * b -
+            m10 * d +
+            m30 * f
         );
 
         let result_22 = r_det * (
-            m00 * (m11 * m33 - m13 * m31) -
-            m10 * (m01 * m33 - m03 * m31) +
-            m30 * (m01 * m13 - m03 * m11)
+            m00 * h -
+            m10 * m +
+            m30 * o
         );
 
         let result_23 = -r_det * (
-            m00 * (m11 * m32 - m12 * m31) -
-            m10 * (m01 * m32 - m02 * m31) +
-            m30 * (m01 * m12 - m02 * m11)
+            m00 * k -
+            m10 * p +
+            m30 * r
         );
 
-        let result_30 = -r_det * (
-            m01 * (m12 * m23 - m13 * m22) -
-            m11 * (m02 * m23 - m03 * m22) +
-            m21 * (m02 * m13 - m03 * m12)
-        );
+        let result_30 = -r_det * det4;
 
         let result_31 = r_det * (
-            m00 * (m12 * m23 - m13 * m22) -
-            m10 * (m02 * m23 - m03 * m22) +
-            m20 * (m02 * m13 - m03 * m12)
+            m00 * c -
+            m10 * e +
+            m20 * f
         );
 
         let result_32 = -r_det * (
-            m00 * (m11 * m23 - m13 * m21) -
-            m10 * (m01 * m23 - m03 * m21) +
-            m20 * (m01 * m13 - m03 * m11)
+            m00 * i -
+            m10 * n +
+            m20 * o
         );
 
         let result_33 = r_det * (
-            m00 * (m11 * m22 - m12 * m21) -
-            m10 * (m01 * m22 - m02 * m21) +
-            m20 * (m01 * m12 - m02 * m11)
+            m00 * l -
+            m10 * q +
+            m20 * r
         );
 
-        let m = Matrix{
-            row_1: Vector::vec4(result_00, result_01, result_02, result_03),
-            row_2: Vector::vec4(result_10, result_11, result_12, result_13),
-            row_3: Vector::vec4(result_20, result_21, result_22, result_23),
-            row_4: Vector::vec4(result_30, result_31, result_32, result_33),
-        };
-
-        m.transpose()
+        Self {
+            row_1: Vector::vec4(result_00, result_10, result_20, result_30),
+            row_2: Vector::vec4(result_01, result_11, result_21, result_31),
+            row_3: Vector::vec4(result_02, result_12, result_22, result_32),
+            row_4: Vector::vec4(result_03, result_13, result_23, result_33),
+        }
     }
 
     pub fn transpose(&self) -> Self {
