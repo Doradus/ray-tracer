@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 use std::{ops, fmt};
+use crate::matrix::Matrix;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector (f32, f32, f32, f32);
+
 
 impl Vector {
 
@@ -126,6 +128,19 @@ impl ops::Mul<f32> for Vector {
             self.2 * _rhs,
             self.3 * _rhs
         )
+    }
+}
+
+impl ops::Mul<Matrix> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Matrix) -> Vector {
+        let x = rhs.row_1.x() * self.x() + rhs.row_2.x() * self.y() + rhs.row_3.x() * self.z() + rhs.row_4.x() * 1.0;
+        let y = rhs.row_1.y() * self.x() + rhs.row_2.y() * self.y() + rhs.row_3.y() * self.z() + rhs.row_4.y() * 1.0;
+        let z = rhs.row_1.z() * self.x() + rhs.row_2.z() * self.y() + rhs.row_3.z() * self.z() + rhs.row_4.z() * 1.0;
+
+        Vector::vec3(x, y, z)
     }
 }
 

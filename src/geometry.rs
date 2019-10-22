@@ -21,7 +21,7 @@ pub struct Mesh {
     pub indices:Vec<u32>,
     pub num_tris:u32
 }
-
+ 
 pub fn create_triangle() -> Mesh {
 	let mut vertices = Vec::new();
     let mut indices = Vec::new();
@@ -40,9 +40,55 @@ pub fn create_triangle() -> Mesh {
     }
 }
 
+pub fn create_plane(width: f32, depth: f32, sub_div_width: u32, sub_div_depth: u32) -> Mesh {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+
+	let tri_count = (sub_div_width - 1) * (sub_div_depth - 1) * 2;
+
+	let half_width = 0.5 * width;
+	let half_depth = 0.5 * depth;
+
+	let dx = width / (sub_div_width - 1) as f32;
+	let dz = depth / (sub_div_depth - 1) as f32;
+
+
+	for i in 0..sub_div_depth {
+        let iter_depth = i as f32;
+		let z = half_depth - iter_depth * dz;
+		for j in 0..sub_div_width {
+            let iter_width = j as f32;
+			let x = -half_width + iter_width * dx;
+			
+	        let vertex = Vertex::new(Vector::vec3(x, 0.0, z));
+
+			vertices.push(vertex);
+		}
+	}
+
+    let lines_width = sub_div_width - 1;
+    let lines_depths = sub_div_depth - 1;
+	for i in 0..lines_width {
+		for j in 0..lines_depths  {
+			indices.push(i * sub_div_depth + j);
+			indices.push(i*sub_div_depth + j + 1);
+			indices.push((i + 1)*sub_div_depth + j);
+			indices.push((i + 1)*sub_div_depth + j);
+			indices.push(i*sub_div_depth + j + 1);
+			indices.push((i + 1)*sub_div_depth + j + 1);
+		}
+	}
+
+    Mesh {
+        vertices: vertices,
+        indices: indices,
+        num_tris: tri_count 
+    }
+}
+
 pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
-    let top_vertex = Vertex::new(Vector::vec3(0.0, radius, -5.0));
-	let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, -5.0));
+    let top_vertex = Vertex::new(Vector::vec3(0.0, radius, 0.0));
+	let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, 0.0));
 
 	let mut vertices = Vec::new();
     vertices.push(top_vertex);
@@ -61,7 +107,7 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
 			let vertex = Vertex::new(Vector::vec3(
                 radius * phi.sin() * theta.cos(),
                 radius * phi.cos(),
-                radius * phi.sin() * theta.sin() - 5.0
+                radius * phi.sin() * theta.sin()
                 )
             );
 

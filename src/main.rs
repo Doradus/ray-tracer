@@ -7,7 +7,7 @@ mod ray_tracer;
 
 use vector::Vector;
 use matrix::Matrix;
-use geometry::{Vertex, create_sphere, create_triangle};
+use geometry::*;
 use std::time::{Duration, Instant};
 use ray_tracer::cast_ray;
 use std::f32::consts;
@@ -31,7 +31,45 @@ fn main() {
 
     let aspect_ratio = image.width as f32 / image.height as f32;
 
-    let tri = vec![create_sphere(0.5, 20, 10)];
+    let mesh = create_sphere(0.75, 20, 10);
+
+	let mut vertices = Vec::new();
+	let mut indices = Vec::new();
+
+    let scaling = Matrix::scaling_matrix(Vector::vec3(2.0, 2.0, 2.0));
+
+    let translation = Matrix::translation_matrix(Vector::vec3(0.0, 0.0, -5.0));
+
+    let world = scaling * translation;
+    let world_inv = world.inverse();
+
+    let id = world_inv * world;
+
+    println!("world: {}", world);
+
+    println!("world inv: {}", world_inv);
+
+    println!("id: {}", id);
+
+    for i in 0..mesh.vertices.len() {
+        let pos = mesh.vertices[i].pos * world;
+        let vertex = Vertex::new(pos);
+        vertices.push(vertex);
+    }
+
+    for i in 0..mesh.indices.len() {
+        indices.push(mesh.indices[i]);
+    }
+
+    let scaled_sphere = Mesh {
+        vertices: vertices,
+        indices: indices,
+        num_tris: mesh.num_tris
+    };
+
+
+
+    let scene_objects = vec![create_plane(0.1, 0.1, 1, 1)];
     let origin = Vector::vec3(0.0, 0.0, 0.0);
 
     let now = Instant::now();
@@ -43,7 +81,7 @@ fn main() {
             let dir = Vector::vec3(p_x, p_y, -1.0);
             let dir = dir.vec3_normalize();
 
-            let ray_color = cast_ray(origin, dir, &tri);
+            let ray_color = cast_ray(origin, dir, &scene_objects);
 
             let color = RGB {
                 r: ray_color.x() as u8,
