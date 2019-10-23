@@ -52,7 +52,6 @@ pub fn create_plane(width: f32, depth: f32, sub_div_width: u32, sub_div_depth: u
 	let dx = width / (sub_div_width - 1) as f32;
 	let dz = depth / (sub_div_depth - 1) as f32;
 
-
 	for i in 0..sub_div_depth {
         let iter_depth = i as f32;
 		let z = half_depth - iter_depth * dz;
