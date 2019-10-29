@@ -89,6 +89,20 @@ impl ops::Add<Vector> for Vector {
     }
 }
 
+impl ops::Add<f32> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, _rhs: f32) -> Self {
+        Self (
+            self.0 + _rhs,
+            self.1 + _rhs,
+            self.2 + _rhs,
+            self.3 + _rhs
+        )
+    }
+}
+
 impl ops::Sub<Vector> for Vector {
     type Output = Self;
 
@@ -99,6 +113,20 @@ impl ops::Sub<Vector> for Vector {
             self.1 - _rhs.1,
             self.2 - _rhs.2,
             self.3 - _rhs.3
+        )
+    }
+}
+
+impl ops::Sub<f32> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, _rhs: f32) -> Self {
+        Self (
+            self.0 - _rhs,
+            self.1 - _rhs,
+            self.2 - _rhs,
+            self.3 - _rhs
         )
     }
 }
@@ -154,6 +182,20 @@ impl ops::Div<Vector> for Vector {
             self.1 / _rhs.1,
             self.2 / _rhs.2,
             self.3 / _rhs.3
+        )
+    }
+}
+
+impl ops::Div<f32> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn div(self, _rhs: f32) -> Self {
+        Self (
+            self.0 / _rhs,
+            self.1 / _rhs,
+            self.2 / _rhs,
+            self.3 / _rhs
         )
     }
 }

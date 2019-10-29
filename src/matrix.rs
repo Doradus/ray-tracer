@@ -271,11 +271,3 @@ impl ops::Mul<Matrix> for Matrix {
         }
     }
 } 
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_some_stuff() {
-      assert_eq!(2 + 2, 4);
-    }
-}
