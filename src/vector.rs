@@ -9,6 +9,11 @@ pub struct Vector (f32, f32, f32, f32);
 impl Vector {
 
     #[inline]
+    pub fn vec2(x: f32, y: f32) -> Self {
+        Self (x, y, 0.0, 0.0)
+    }
+
+    #[inline]
     pub fn vec3(x: f32, y: f32, z: f32) -> Self {
         Self (x, y, z, 0.0)
     }

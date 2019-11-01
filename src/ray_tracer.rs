@@ -1,23 +1,29 @@
 use crate::vector::Vector;
 use crate::geometry::{Mesh};
 use crate::scene::*;
+use crate::shading::{calculate_color, ShadingData};
 use std::f32;
 
 pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData) -> Vector {
     match trace(origin, direction, &scene.scene_objects) {
         None => Vector::vec3(0.0, 0.0, 0.0),
         Some(i) => {
-            let ind_1 = scene.scene_objects[i.mesh_index].mesh.indices[i.triangle_index] as usize;
-            let ind_2 = scene.scene_objects[i.mesh_index].mesh.indices[i.triangle_index + 1] as usize;
-            let ind_3 = scene.scene_objects[i.mesh_index].mesh.indices[i.triangle_index + 2] as usize;
+            let mesh = &scene.scene_objects[i.mesh_index].mesh;
+            
+            let ind_1 = mesh.indices[i.triangle_index] as usize;
+            let ind_2 = mesh.indices[i.triangle_index + 1] as usize;
+            let ind_3 = mesh.indices[i.triangle_index + 2] as usize;
 
-            let v_1 = (scene.scene_objects[i.mesh_index].mesh.vertices[ind_1].normal + 1.0) * 0.5 * 255.0;
-            let v_2 = (scene.scene_objects[i.mesh_index].mesh.vertices[ind_2].normal + 1.0) * 0.5 * 255.0;
-            let v_3 = (scene.scene_objects[i.mesh_index].mesh.vertices[ind_3].normal + 1.0) * 0.5 * 255.0;
+            let v_0 = &mesh.vertices[ind_1];
+            let v_1 = &mesh.vertices[ind_2];
+            let v_2 = &mesh.vertices[ind_3];
 
-            let color = v_1 * (1.0 - i.u - i.v) + v_2 * i.u + v_3 * i.v;
-            // let color = Vector::vec3((1.0 - i.u - i.v) * 255.0, i.u * 255.0, i.v * 255.0);
-            color
+            let position = v_0.pos * (1.0 - i.u - i.v) + v_1.pos * i.u + v_2.pos * i.v;
+            let normal = v_0.normal * (1.0 - i.u - i.v) + v_1.normal * i.u + v_2.normal * i.v;
+
+            let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0));
+
+            calculate_color(data)
         }
     }
 }

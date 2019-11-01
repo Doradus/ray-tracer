@@ -1,5 +1,3 @@
-mod ppm;
-use ppm::*;
 mod vector;
 mod matrix;
 mod geometry;
@@ -15,6 +13,7 @@ use shading::Material;
 use std::time::Instant;
 use ray_tracer::cast_ray;
 use std::f32::consts;
+use image;
 
 struct Info {
     width:u32,
@@ -30,7 +29,7 @@ impl Info {
 fn main() {
     let info = Info::new(1024, 1024);
 
-    let mut buffer = PPM::new(info.width, info.height);
+    let mut buffer: image::RgbImage = image::ImageBuffer::new(1024, 1024);
 
 //    let triangle = create_scene_object(
 //         create_triangle(),
@@ -72,7 +71,7 @@ fn main() {
     println!("image generated in: {} seconds", end);
 }
 
-fn render(buffer: & mut PPM, info: Info, scene: &SceneData) {
+fn render(buffer: & mut image::RgbImage, info: Info, scene: &SceneData) {
     let origin = Vector::vec3(0.0, 0.0, 0.0);
     let aspect_ratio = info.width as f32 / info.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
@@ -88,13 +87,9 @@ fn render(buffer: & mut PPM, info: Info, scene: &SceneData) {
 
             let ray_color = cast_ray(origin, dir, &scene);
 
-            let color = RGB {
-                r: ray_color.x() as u8,
-                g: ray_color.y() as u8,
-                b: ray_color.z() as u8
-            };
-
-            buffer.set_pixel(x, y, color);
+            let pixel = buffer.get_pixel_mut(x, y);
+            let image::Rgb(data) = *pixel;
+            *pixel = image::Rgb([ray_color.x() as u8, ray_color.y() as u8, ray_color.z() as u8]);
         }
     }
 }
@@ -106,7 +101,6 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
 
     let world_matrix = scale_matrix * translation_matrix;
     let inv_world = world_matrix.inverse().transpose();
-    // let transpose = inv_world.transpose();
 
     let mut transformed_vertices = Vec::new();
     for i in 0..mesh.vertices.len() {
@@ -123,6 +117,6 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
     SceneObject::new(mesh_data, material)
 }
 
-fn write_to_file(buffer: &PPM) {
-    buffer.write_file("image.ppm").expect("Failed Writing File");
+fn write_to_file(buffer: &image::RgbImage) {
+    buffer.save("image.png").unwrap();
 }
