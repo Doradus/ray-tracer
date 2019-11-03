@@ -9,7 +9,7 @@ use scene::*;
 use vector::Vector;
 use matrix::Matrix;
 use geometry::*;
-use shading::Material;
+use shading::*;
 use std::time::Instant;
 use ray_tracer::cast_ray;
 use std::f32::consts;
@@ -27,9 +27,9 @@ impl Info {
 }
 
 fn main() {
-    let info = Info::new(1024, 1024);
+    let info = Info::new(512, 512);
 
-    let mut buffer: image::RgbImage = image::ImageBuffer::new(1024, 1024);
+    let mut buffer: image::RgbImage = image::ImageBuffer::new(info.width, info.height);
 
 //    let triangle = create_scene_object(
 //         create_triangle(),
@@ -40,10 +40,10 @@ fn main() {
 //     );
 
     let sphere = create_scene_object(
-        create_sphere(1.0, 40, 20),
+        create_sphere(0.5, 40, 20),
         Material::new(Vector::vec3(255.0, 0.0, 0.0)),
         Vector::vec3(0.0, 0.0, -5.0),
-        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(2.0, 2.0, 2.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
    
@@ -57,8 +57,11 @@ fn main() {
 
     let scene_objects = vec![sphere, plane];
 
+    let lights = vec![shading::Lights::Directional(DirectionalLight::new(Vector::vec3(0.2, -0.4, -0.8), 1.0, Vector::vec3(1.0, 1.0, 1.0)))];
+
     let scene = SceneData {
-        scene_objects
+        scene_objects,
+        lights
     };
 
     let now = Instant::now();
@@ -88,8 +91,8 @@ fn render(buffer: & mut image::RgbImage, info: Info, scene: &SceneData) {
             let ray_color = cast_ray(origin, dir, &scene);
 
             let pixel = buffer.get_pixel_mut(x, y);
-            let image::Rgb(data) = *pixel;
-            *pixel = image::Rgb([ray_color.x() as u8, ray_color.y() as u8, ray_color.z() as u8]);
+            *pixel = image::Rgb(
+                [(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]);
         }
     }
 }
@@ -101,6 +104,9 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
 
     let world_matrix = scale_matrix * translation_matrix;
     let inv_world = world_matrix.inverse().transpose();
+
+    println!("world: {}", world_matrix);
+    println!("world inv : {}", inv_world);
 
     let mut transformed_vertices = Vec::new();
     for i in 0..mesh.vertices.len() {

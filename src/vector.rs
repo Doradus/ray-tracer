@@ -108,6 +108,19 @@ impl ops::Add<f32> for Vector {
     }
 }
 
+impl ops::AddAssign<Vector> for Vector {
+    #[inline]
+    fn add_assign(&mut self, _rhs: Vector) {
+        *self = Self (
+            self.0 + _rhs.0,
+            self.1 + _rhs.1,
+            self.2 + _rhs.2,
+            self.3 + _rhs.3
+        );
+    }
+}
+
+
 impl ops::Sub<Vector> for Vector {
     type Output = Self;
 

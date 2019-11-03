@@ -23,7 +23,7 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData) -> Vector 
 
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0));
 
-            calculate_color(data)
+            calculate_color(data, &scene.lights)
         }
     }
 }
