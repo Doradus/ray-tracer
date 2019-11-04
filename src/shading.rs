@@ -1,4 +1,7 @@
 use crate::Vector;
+use crate::ray_tracer::trace;
+use crate::scene::*;
+use std::f32;
 
 pub struct DirectionalLight {
     pub direction: Vector,
@@ -29,6 +32,7 @@ pub enum Lights {
     Point(PointLight)
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Material {
     pub albedo: Vector
 }
@@ -44,33 +48,40 @@ impl Material {
 pub struct ShadingData {
     position: Vector,
     normal: Vector,
-    textureCoord: Vector
+    textureCoord: Vector,
+    material: Material
 }
 
 impl ShadingData {
-    pub fn new (position: Vector, normal: Vector, textureCoord: Vector) -> Self {
+    pub fn new (position: Vector, normal: Vector, textureCoord: Vector, material: Material) -> Self {
         Self {
             position: position,
             normal: normal,
-    
-            textureCoord: textureCoord
+            textureCoord: textureCoord,
+            material: material
         }
     }
 }
 
-pub fn calculate_color(data: ShadingData, lights: &[Lights]) -> Vector {
+pub fn calculate_color(data: ShadingData, origin: Vector, lights: &[Lights], scene_object: &[SceneObject]) -> Vector {
     let mut diffuse = Vector::vec3(0.0, 0.0, 0.0);
 
     for i in 0..lights.len() {
         match &lights[i] {
-            Lights::Directional(d) => {
-                let dir_normalized = d.direction.vec3_normalize() * - 1.0;
-                diffuse += d.color * dir_normalized.vec3_dot(data.normal.vec3_normalize()).max(0.0) * d.brightness;
+            Lights::Directional(light) => {  
+                let light_dir = -light.direction;      
+                match trace(data.position + data.normal * 0.0001, light_dir, scene_object, f32::INFINITY) {
+                    None => {
+                        diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness;
+                    },
+                    _ => ()
+                }
+                // diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness;
             },
             Lights::Point(point) => ()
         }
     }
 
-    Vector::vec3(0.7, 0.7, 0.7) * diffuse
+    data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.1, 0.1, 0.15)
     // Vector::vec3(data.normal.x() + 1.0, data.normal.y() + 1.0, data.normal.z() + 1.0) * 0.5
 }

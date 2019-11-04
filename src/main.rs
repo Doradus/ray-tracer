@@ -27,7 +27,7 @@ impl Info {
 }
 
 fn main() {
-    let info = Info::new(512, 512);
+    let info = Info::new(1024, 1024);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(info.width, info.height);
 
@@ -41,23 +41,31 @@ fn main() {
 
     let sphere = create_scene_object(
         create_sphere(0.5, 40, 20),
-        Material::new(Vector::vec3(255.0, 0.0, 0.0)),
-        Vector::vec3(0.0, 0.0, -5.0),
-        Vector::vec3(2.0, 2.0, 2.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-   
-    let plane = create_scene_object(
-        create_plane(5.0, 5.0, 5, 5),
-        Material::new(Vector::vec3(255.0, 0.0, 0.0)),
-        Vector::vec3(0.0, -1.0, -5.0),
+        Material::new(Vector::vec3(0.0, 0.8, 0.0)),
+        Vector::vec3(-1.0, 0.0, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
-    let scene_objects = vec![sphere, plane];
+    let cube = create_scene_object(
+        create_box(1.0, 1.0 , 1.0),
+        Material::new(Vector::vec3(0.8, 0.0, 0.0)),
+        Vector::vec3(1.0, 0.0, -4.5),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0 * consts::PI / 180.0, 0.0 * consts::PI / 180.0, 0.0)
+    );
+   
+    let plane = create_scene_object(
+        create_plane(5.0, 5.0, 5, 5),
+        Material::new(Vector::vec3(0.5, 0.5, 0.5)),
+        Vector::vec3(0.0, -0.5, -4.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
 
-    let lights = vec![shading::Lights::Directional(DirectionalLight::new(Vector::vec3(0.2, -0.4, -0.8), 1.0, Vector::vec3(1.0, 1.0, 1.0)))];
+    let scene_objects = vec![cube, sphere, plane];
+
+    let lights = vec![shading::Lights::Directional(DirectionalLight::new(Vector::vec3(-0.3, -0.3, -0.7), 1.0, Vector::vec3(1.0, 1.0, 1.0)))];
 
     let scene = SceneData {
         scene_objects,
@@ -101,16 +109,13 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
     let scale_matrix = Matrix::scaling_matrix(scale);
     // let rotation_matrix = Matrix::scaling_matrix(rotation);
     let translation_matrix = Matrix::translation_matrix(position);
-
-    let world_matrix = scale_matrix * translation_matrix;
+    let rotation_matrix = Matrix::roatation_x(rotation.x()) * Matrix::roatation_y(rotation.y());
+    let world_matrix = scale_matrix * rotation_matrix * translation_matrix;
     let inv_world = world_matrix.inverse().transpose();
-
-    println!("world: {}", world_matrix);
-    println!("world inv : {}", inv_world);
 
     let mut transformed_vertices = Vec::new();
     for i in 0..mesh.vertices.len() {
-        let vertex = Vertex::new(mesh.vertices[i].pos * world_matrix, mesh.vertices[i].normal * inv_world);       
+        let vertex = Vertex::new(mesh.vertices[i].pos * world_matrix, mesh.vertices[i].normal * inv_world);   
         transformed_vertices.push(vertex);
     }
 

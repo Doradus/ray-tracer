@@ -85,6 +85,82 @@ pub fn create_plane(width: f32, depth: f32, sub_div_width: u32, sub_div_depth: u
     }
 }
 
+pub fn create_box(width: f32, height: f32, depth: f32) -> Mesh {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+
+    let half_width = width * 0.5;
+    let half_height = height * 0.5;
+    let half_depth = depth * 0.5;
+
+    //front
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, half_depth), Vector::vec3(0.0, 0.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, half_depth), Vector::vec3(0.0, 0.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, half_depth), Vector::vec3(0.0, 0.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, half_depth), Vector::vec3(0.0, 0.0, 1.0)));
+
+    //left
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, half_depth), Vector::vec3(-1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, half_depth), Vector::vec3(-1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, -half_depth), Vector::vec3(-1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, -half_depth), Vector::vec3(-1.0, 0.0, 0.0)));
+
+    //right
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, half_depth), Vector::vec3(1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, half_depth), Vector::vec3(1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, -half_depth), Vector::vec3(1.0, 0.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, -half_depth), Vector::vec3(1.0, 0.0, 0.0)));
+
+    //back
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, -half_depth), Vector::vec3(0.0, 0.0, -1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, -half_depth), Vector::vec3(0.0, 0.0, -1.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, -half_depth), Vector::vec3(0.0, 0.0, -1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, -half_depth), Vector::vec3(0.0, 0.0, -1.0)));
+
+    //top
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, half_depth), Vector::vec3(0.0, 1.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, half_depth), Vector::vec3(0.0, 1.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, half_height, -half_depth), Vector::vec3(0.0, 1.0, 0.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, half_height, -half_depth), Vector::vec3(0.0, 1.0, 0.0)));
+
+    //bottom
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, half_depth), Vector::vec3(0.0, -1.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, half_depth), Vector::vec3(0.0, -1.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(-half_width, -half_height, -half_depth), Vector::vec3(0.0, -1.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(half_width, -half_height, -half_depth), Vector::vec3(0.0, -1.0, 1.0)));
+
+    //front
+    indices.push(1); indices.push(3); indices.push(0);
+    indices.push(2); indices.push(0); indices.push(3);
+
+    //left
+    indices.push(4); indices.push(5); indices.push(6);
+    indices.push(7); indices.push(6); indices.push(5);
+
+    //right
+    indices.push(10); indices.push(11); indices.push(8);
+    indices.push(9); indices.push(8); indices.push(11);
+
+    //back
+    indices.push(12); indices.push(14); indices.push(13);
+    indices.push(15); indices.push(13); indices.push(14);
+
+    //top
+    indices.push(17); indices.push(19); indices.push(16);
+    indices.push(18); indices.push(16); indices.push(19);
+
+    //bottom
+    indices.push(20); indices.push(22); indices.push(21);
+    indices.push(23); indices.push(21); indices.push(22);
+
+
+    Mesh {
+        vertices: vertices,
+        indices: indices,
+        num_tris: 12,
+    }
+}
+
 pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
     let top_vertex = Vertex::new(Vector::vec3(0.0, radius, 0.0), Vector::vec3(0.0, 1.0, 0.0));
     let bottom_vertex = Vertex::new(Vector::vec3(0.0, -radius, 0.0), Vector::vec3(0.0, -1.0, 0.0));

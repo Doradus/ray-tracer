@@ -218,6 +218,20 @@ impl ops::Div<f32> for Vector {
     }
 }
 
+impl ops::Neg for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn neg(self) -> Self {
+        Self (
+            -self.0,
+            -self.1,
+            -self.2,
+            -self.3
+        )
+    }
+}
+
 impl From<(f32, f32, f32, f32)> for Vector {
     fn from(tuple: (f32, f32, f32, f32)) -> Self {
         Self (tuple.0, tuple.1, tuple.2, tuple.3)

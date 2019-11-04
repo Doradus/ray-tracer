@@ -204,6 +204,24 @@ impl Matrix {
             row_4: Vector::vec4(t.x(), t.y(), t.z(), 1.0)
         }
     }
+
+    pub fn roatation_x(rotation: f32) -> Self {
+        Self {
+            row_1: Vector::vec4(1.0, 0.0, 0.0, 0.0),
+            row_2: Vector::vec4(0.0, rotation.cos(), rotation.sin(), 0.0),
+            row_3: Vector::vec4(0.0, -rotation.sin(), rotation.cos(), 0.0),
+            row_4: Vector::vec4(0.0, 0.0, 0.0, 1.0)
+        }
+    }
+
+    pub fn roatation_y(rotation: f32) -> Self {
+        Self {
+            row_1: Vector::vec4(rotation.cos(), 0.0, -rotation.sin(), 0.0),
+            row_2: Vector::vec4(0.0, 1.0, 0.0, 0.0),
+            row_3: Vector::vec4(rotation.sin(), 0.0, rotation.cos(), 0.0),
+            row_4: Vector::vec4(0.0, 0.0, 0.0, 1.0)
+        }
+    }
 }
 
 impl fmt::Display for Matrix {
