@@ -2,10 +2,11 @@ use crate::vector::Vector;
 use crate::geometry::{Mesh};
 use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
+use crate::Stats;
 use std::f32;
 
-pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData) -> Vector {
-    match trace(origin, direction, &scene.scene_objects, f32::INFINITY) {
+pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, stats: & mut Stats) -> Vector {
+    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, stats) {
         None => Vector::vec3(0.0, 0.0, 0.0),
         Some(i) => {
             let mesh = &scene.scene_objects[i.mesh_index].mesh;
@@ -22,7 +23,7 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData) -> Vector 
             let normal = (v_0.normal * (1.0 - i.u - i.v) + v_1.normal * i.u + v_2.normal * i.v).vec3_normalize();
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0), scene.scene_objects[i.mesh_index].material);
 
-            calculate_color(data, origin, &scene.lights, &scene.scene_objects)
+            calculate_color(data, origin, &scene.lights, &scene.scene_objects, stats)
         }
     }
 }
@@ -36,12 +37,13 @@ pub struct TraceResult {
 }
 
 //will find the nearest object
-pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32) -> Option<TraceResult> {
+pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, stats: & mut Stats) -> Option<TraceResult> {
+    stats.num_rays_shot += 1;
     let mut found:Option<TraceResult> = None;
     let mut closest = near;
 
     for i in 0..scene_objects.len() {
-        match intersect_mesh(origin, direction, &scene_objects[i].mesh) {
+        match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
             Some(mesh_result) => {
                 if mesh_result.t < closest {
                     closest = mesh_result.t;
@@ -70,7 +72,7 @@ struct MeshIntersectResult {
     t: f32
 }
 
-fn intersect_mesh(origin: Vector, direction: Vector, scene_object: &Mesh) -> Option<MeshIntersectResult> {
+fn intersect_mesh(origin: Vector, direction: Vector, scene_object: &Mesh, stats: & mut Stats) -> Option<MeshIntersectResult> {
         let mut found:Option<MeshIntersectResult> = None;
         let mut closest = f32::INFINITY;
 
@@ -80,7 +82,7 @@ fn intersect_mesh(origin: Vector, direction: Vector, scene_object: &Mesh) -> Opt
             let v_1 = scene_object.indices[index + 1] as usize;
             let v_2 = scene_object.indices[index + 2] as usize;
 
-            match intersect_triangle(origin, direction, scene_object.vertices[v_0].pos, scene_object.vertices[v_1].pos, scene_object.vertices[v_2].pos) {
+            match intersect_triangle(origin, direction, scene_object.vertices[v_0].pos, scene_object.vertices[v_1].pos, scene_object.vertices[v_2].pos, stats) {
                 Some(tri_result) => {
                     if tri_result.t < closest {
                         closest = tri_result.t;
@@ -109,7 +111,9 @@ struct TriangleIntersectResult {
     pub t: f32
 }
 
-fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector) -> Option<TriangleIntersectResult> {
+fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector, stats: & mut Stats) -> Option<TriangleIntersectResult> {
+    stats.num_tringle_tests += 1;
+
     let v0v1  = v_1 - v_0;
     let v0v2  = v_2 - v_0;
 
@@ -143,6 +147,8 @@ fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vec
     }
 
     let result = TriangleIntersectResult{u: u, v: v, t: t};
+
+    stats.num_triangles_intersected += 1;
 
     Some(result)
 }

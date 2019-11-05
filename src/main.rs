@@ -12,36 +12,57 @@ use geometry::*;
 use shading::*;
 use std::time::Instant;
 use ray_tracer::cast_ray;
-use std::f32::consts;
+use std::{f32::consts, fmt};
 use image;
 
-struct Info {
+struct RenderSettings {
     width:u32,
-    height:u32
+    height:u32,
+    ray_depth: u32
 }
 
-impl Info {
-    fn new(width: u32, height: u32) -> Self {
-        Self {width: width, height: height}
+impl RenderSettings {
+    fn new(width: u32, height: u32, ray_depth: u32) -> Self {
+        Self {width: width, height: height, ray_depth: ray_depth}
+    }
+}
+
+pub struct Stats {
+    pub num_rays_shot: u32,
+    pub num_tringle_tests: u32,
+    pub num_triangles_intersected: u32,
+    pub render_time: f64
+}
+
+impl Default for Stats {
+    fn default() -> Stats {
+        Stats {
+            num_rays_shot: 0,
+            num_tringle_tests: 0,
+            num_triangles_intersected: 0,
+            render_time: 0.0
+        }
+    }
+}
+
+impl fmt::Display for Stats {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+            "number of rays shot: {},\n number of triangles tested: {},\n number of triangles intersected: {},\n image generated in: {}",
+            self.num_rays_shot, self.num_tringle_tests, self.num_triangles_intersected, self.render_time
+        )
     }
 }
 
 fn main() {
-    let info = Info::new(512, 512);
+    let mut stats = Stats {..Default::default()};
+    let settings = RenderSettings::new(512, 512, 2);
 
-    let mut buffer: image::RgbImage = image::ImageBuffer::new(info.width, info.height);
-
-//    let triangle = create_scene_object(
-//         create_triangle(),
-//         Material::new(Vector::vec3(255.0, 0.0, 0.0)),
-//         Vector::vec3(0.0, 0.0, -5.0),
-//         Vector::vec3(1.0, 1.0, 1.0),
-//         Vector::vec3(0.0, 0.0, 0.0)
-//     );
+    let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
     let sphere = create_scene_object(
         create_sphere(0.5, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
         Vector::vec3(-0.5, 0.0, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -49,7 +70,7 @@ fn main() {
 
     let cube = create_scene_object(
         create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
         Vector::vec3(0.75, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
@@ -57,7 +78,7 @@ fn main() {
    
     let plane = create_scene_object(
         create_plane(5.0, 5.0, 5, 5),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -76,29 +97,30 @@ fn main() {
 
     let now = Instant::now();
 
-    render(& mut buffer, info, &scene);
+    render(& mut buffer, settings, &scene, &mut stats);
 
     let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
-
+    stats.render_time = end;
     write_to_file(&buffer);
-    println!("image generated in: {} seconds", end);
+
+    println!("{}", stats);
 }
 
-fn render(buffer: & mut image::RgbImage, info: Info, scene: &SceneData) {
+fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
     let origin = Vector::vec3(0.0, 0.0, 0.0);
-    let aspect_ratio = info.width as f32 / info.height as f32;
+    let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
 
 
-    for x in 0..info.width {
-        let p_x = (2.0 * ((x as f32 + 0.5) / info.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
-        for y in 0..info.height {
-            let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / info.width as f32) * (fov * 0.5).tan(); 
+    for x in 0..settings.width {
+        let p_x = (2.0 * ((x as f32 + 0.5) / settings.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
+        for y in 0..settings.height {
+            let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.width as f32) * (fov * 0.5).tan(); 
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
             let dir = dir.vec3_normalize();
 
-            let ray_color = cast_ray(origin, dir, &scene);
+            let ray_color = cast_ray(origin, dir, &scene, stats);
 
             let pixel = buffer.get_pixel_mut(x, y);
             *pixel = image::Rgb(
