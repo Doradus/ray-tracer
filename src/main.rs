@@ -27,7 +27,7 @@ impl Info {
 }
 
 fn main() {
-    let info = Info::new(1024, 1024);
+    let info = Info::new(512, 512);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(info.width, info.height);
 
@@ -41,23 +41,23 @@ fn main() {
 
     let sphere = create_scene_object(
         create_sphere(0.5, 40, 20),
-        Material::new(Vector::vec3(0.0, 0.8, 0.0)),
-        Vector::vec3(-1.0, 0.0, -3.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
+        Vector::vec3(-0.5, 0.0, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let cube = create_scene_object(
         create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.8, 0.0, 0.0)),
-        Vector::vec3(1.0, 0.0, -4.5),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
+        Vector::vec3(0.75, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0 * consts::PI / 180.0, 0.0 * consts::PI / 180.0, 0.0)
+        Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
     );
    
     let plane = create_scene_object(
         create_plane(5.0, 5.0, 5, 5),
-        Material::new(Vector::vec3(0.5, 0.5, 0.5)),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6)),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -65,7 +65,9 @@ fn main() {
 
     let scene_objects = vec![cube, sphere, plane];
 
-    let lights = vec![shading::Lights::Directional(DirectionalLight::new(Vector::vec3(-0.3, -0.3, -0.7), 1.0, Vector::vec3(1.0, 1.0, 1.0)))];
+    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.3, -0.3, -0.7), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let point_light = Lights::Point(PointLight::new(Vector::vec3(0.0, 1.0, -3.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 1.0, 0.0)));
+    let lights = vec![point_light, directional_light];
 
     let scene = SceneData {
         scene_objects,

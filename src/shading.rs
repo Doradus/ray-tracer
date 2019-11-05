@@ -27,6 +27,18 @@ impl DirectionalLight {
     } 
 }
 
+impl PointLight {
+    pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
+        Self {
+            position: pos,
+            brightness: brightness,
+            color: color,
+            range: range,
+            attenuation: attenuation
+        }
+    }
+}
+
 pub enum Lights {
     Directional(DirectionalLight),
     Point(PointLight)
@@ -76,12 +88,21 @@ pub fn calculate_color(data: ShadingData, origin: Vector, lights: &[Lights], sce
                     },
                     _ => ()
                 }
-                // diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness;
             },
-            Lights::Point(point) => ()
+            Lights::Point(light) => {
+                let light_dir = light.position - data.position;
+                let distance = light_dir.vec3_length();
+                let light_dir = light_dir.vec3_normalize();      
+                match trace(data.position + data.normal * 0.0001, light_dir, scene_object, distance) {
+                    None => {
+                        let falloff = 1.0 / light.attenuation.vec3_dot(Vector::vec3(1.0, distance, distance * distance));
+                        diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness * falloff;
+                    },
+                    _ => ()
+                }
+            }
         }
     }
 
-    data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.1, 0.1, 0.15)
-    // Vector::vec3(data.normal.x() + 1.0, data.normal.y() + 1.0, data.normal.z() + 1.0) * 0.5
+    data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.3, 0.3, 0.35)
 }
