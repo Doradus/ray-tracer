@@ -56,7 +56,7 @@ impl fmt::Display for Stats {
 
 fn main() {
     let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(512, 512, 2);
+    let settings = RenderSettings::new(1024, 1024, 2);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
@@ -137,9 +137,12 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
     let world_matrix = scale_matrix * rotation_matrix * translation_matrix;
     let inv_world = world_matrix.inverse().transpose();
 
+    let mut bounding_box = BoundingBox::new(mesh.vertices[0].pos * world_matrix);
     let mut transformed_vertices = Vec::new();
+
     for i in 0..mesh.vertices.len() {
-        let vertex = Vertex::new(mesh.vertices[i].pos * world_matrix, mesh.vertices[i].normal * inv_world);   
+        let vertex = Vertex::new(mesh.vertices[i].pos * world_matrix, mesh.vertices[i].normal * inv_world);
+        bounding_box.extend_bounds(vertex.pos);   
         transformed_vertices.push(vertex);
     }
 
@@ -149,7 +152,8 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
         num_tris: mesh.num_tris
     };
 
-    SceneObject::new(mesh_data, material)
+    println!("{}", bounding_box);
+    SceneObject::new(mesh_data, material, bounding_box)
 }
 
 fn write_to_file(buffer: &image::RgbImage) {

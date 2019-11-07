@@ -42,23 +42,31 @@ pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], n
     let mut found:Option<TraceResult> = None;
     let mut closest = near;
 
-    for i in 0..scene_objects.len() {
-        match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
-            Some(mesh_result) => {
-                if mesh_result.t < closest {
-                    closest = mesh_result.t;
+    let inv_dir = Vector::vec3(1.0 / direction.x(), 1.0 / direction.y(), 1.0 / direction.z());
+    let sign_x = if inv_dir.x() < 0.0 {1.0} else {0.0};
+    let sign_y = if inv_dir.y() < 0.0 {1.0} else {0.0};
+    let sign_z = if inv_dir.z() < 0.0 {1.0} else {0.0};
+    let sign = Vector::vec3(sign_x, sign_y, sign_z);
 
-                    let result = TraceResult {
-                        u: mesh_result.u,
-                        v: mesh_result.v,
-                        triangle_index: mesh_result.triangle_index,
-                        mesh_index: i,
-                        t: mesh_result.t
-                    };
-                    found = Some(result);
-                }
-            },
-            None => ()
+    for i in 0..scene_objects.len() {
+        if scene_objects[i].bounding_box.intersect(origin, inv_dir, sign) {
+            match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
+                Some(mesh_result) => {
+                    if mesh_result.t < closest {
+                        closest = mesh_result.t;
+
+                        let result = TraceResult {
+                            u: mesh_result.u,
+                            v: mesh_result.v,
+                            triangle_index: mesh_result.triangle_index,
+                            mesh_index: i,
+                            t: mesh_result.t
+                        };
+                        found = Some(result);
+                    }
+                },
+                None => ()
+            }
         }
     }
 

@@ -72,6 +72,26 @@ impl Vector {
     pub fn w (self) -> f32 {
         self.3
     }
+
+    #[inline]
+    pub fn set_x(&mut self, x: f32) {
+        self.0 = x;
+    }
+
+    #[inline]
+    pub fn set_y(&mut self, y: f32) {
+        self.1 = y;
+    }
+
+    #[inline]
+    pub fn set_z(&mut self, z: f32) {
+        self.2 = z;
+    }
+
+    #[inline]
+    pub fn set_w(&mut self, w: f32) {
+        self.3 = w;
+    }
 }
 
 impl fmt::Display for Vector {
