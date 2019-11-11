@@ -56,7 +56,7 @@ impl fmt::Display for Stats {
 
 fn main() {
     let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(1024, 1024, 2);
+    let settings = RenderSettings::new(512, 512, 2);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
@@ -111,11 +111,13 @@ fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &Scene
     let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
 
+    let scale = (fov * 0.5).tan();
+    let a = aspect_ratio * scale;
 
     for x in 0..settings.width {
-        let p_x = (2.0 * ((x as f32 + 0.5) / settings.width as f32) - 1.0) * aspect_ratio * (fov * 0.5).tan(); 
+        let p_x = (2.0 * (x as f32 + 0.5) / settings.width as f32 - 1.0) * a; 
         for y in 0..settings.height {
-            let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.width as f32) * (fov * 0.5).tan(); 
+            let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.height as f32) * scale; 
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
             let dir = dir.vec3_normalize();
@@ -152,7 +154,6 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
         num_tris: mesh.num_tris
     };
 
-    println!("{}", bounding_box);
     SceneObject::new(mesh_data, material, bounding_box)
 }
 

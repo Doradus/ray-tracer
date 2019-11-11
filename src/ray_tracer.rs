@@ -36,7 +36,6 @@ pub struct TraceResult {
     t: f32
 }
 
-//will find the nearest object
 pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, stats: & mut Stats) -> Option<TraceResult> {
     stats.num_rays_shot += 1;
     let mut found:Option<TraceResult> = None;
