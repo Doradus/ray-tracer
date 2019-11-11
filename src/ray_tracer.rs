@@ -20,10 +20,11 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, stats: & m
             let v_2 = &mesh.vertices[ind_3];
 
             let position = origin + direction * i.t;
-            let normal = (v_0.normal * (1.0 - i.u - i.v) + v_1.normal * i.u + v_2.normal * i.v).vec3_normalize();
+            
+            let normal = (v_0.normal.vec3_normalize() * (1.0 - i.u - i.v) + v_1.normal.vec3_normalize() * i.u + v_2.normal.vec3_normalize() * i.v).vec3_normalize();
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0), scene.scene_objects[i.mesh_index].material);
 
-            calculate_color(data, origin, &scene.lights, &scene.scene_objects, stats)
+            calculate_color(data, direction, &scene.lights, &scene.scene_objects, stats)
         }
     }
 }

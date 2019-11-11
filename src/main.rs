@@ -4,6 +4,7 @@ mod geometry;
 mod shading;
 mod ray_tracer;
 mod scene;
+mod math;
 
 use scene::*;
 use vector::Vector;
@@ -56,39 +57,103 @@ impl fmt::Display for Stats {
 
 fn main() {
     let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(512, 512, 2);
+    let settings = RenderSettings::new(1920, 1080, 2);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
-    let sphere = create_scene_object(
-        create_sphere(0.5, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
-        Vector::vec3(-0.5, 0.0, -3.0),
+    let sphere1 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.1),
+        Vector::vec3(-1.6, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere2 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.2),
+        Vector::vec3(-1.2, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere3 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.3),
+        Vector::vec3(-0.8, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere4 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.4),
+        Vector::vec3(-0.4, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere5 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.5),
+        Vector::vec3(0.0, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere6 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.6),
+        Vector::vec3(0.4, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere7 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.7),
+        Vector::vec3(0.8, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere8 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.8),
+        Vector::vec3(1.2, -0.35, -3.0),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0)
+    );
+
+    let sphere9 = create_scene_object(
+        create_sphere(0.15, 40, 20),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.9),
+        Vector::vec3(1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let cube = create_scene_object(
         create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), 0.6),
         Vector::vec3(0.75, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
     );
    
     let plane = create_scene_object(
-        create_plane(5.0, 5.0, 5, 5),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), 1.0),
+        create_plane(8.0, 8.0, 5, 5),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), 0.3),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
-    let scene_objects = vec![cube, sphere, plane];
+    let scene_objects = vec![sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7, sphere8, sphere9, plane];
 
-    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.3, -0.3, -0.7), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.4, -0.6, -0.6), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
     let point_light = Lights::Point(PointLight::new(Vector::vec3(0.0, 1.0, -3.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 1.0, 0.0)));
-    let lights = vec![point_light, directional_light];
+    let lights = vec![directional_light];
 
     let scene = SceneData {
         scene_objects,
@@ -120,9 +185,8 @@ fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &Scene
             let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.height as f32) * scale; 
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
-            let dir = dir.vec3_normalize();
 
-            let ray_color = cast_ray(origin, dir, &scene, stats);
+            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, stats);
 
             let pixel = buffer.get_pixel_mut(x, y);
             *pixel = image::Rgb(
