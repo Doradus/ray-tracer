@@ -57,13 +57,13 @@ impl fmt::Display for Stats {
 
 fn main() {
     let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(1920, 1080, 2);
+    let settings = RenderSettings::new(1280, 720, 2);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
     let sphere1 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.1),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
         Vector::vec3(-1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -71,7 +71,7 @@ fn main() {
 
     let sphere2 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.2),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0),
         Vector::vec3(-1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -79,7 +79,7 @@ fn main() {
 
     let sphere3 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.3),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0),
         Vector::vec3(-0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -87,7 +87,7 @@ fn main() {
 
     let sphere4 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.4),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0),
         Vector::vec3(-0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -95,7 +95,7 @@ fn main() {
 
     let sphere5 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.5),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0),
         Vector::vec3(0.0, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -103,7 +103,7 @@ fn main() {
 
     let sphere6 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.6),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0),
         Vector::vec3(0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -111,7 +111,7 @@ fn main() {
 
     let sphere7 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.7),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0),
         Vector::vec3(0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -119,7 +119,7 @@ fn main() {
 
     let sphere8 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.8),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0),
         Vector::vec3(1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -127,7 +127,7 @@ fn main() {
 
     let sphere9 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), 0.9),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.9, 1.0),
         Vector::vec3(1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -135,7 +135,7 @@ fn main() {
 
     let cube = create_scene_object(
         create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), 0.6),
+        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
         Vector::vec3(0.75, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
@@ -143,7 +143,7 @@ fn main() {
    
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), 0.3),
+        Material::new(Vector::vec3(0.7, 0.7, 0.7), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -151,9 +151,9 @@ fn main() {
 
     let scene_objects = vec![sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7, sphere8, sphere9, plane];
 
-    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.4, -0.6, -0.6), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let point_light = Lights::Point(PointLight::new(Vector::vec3(0.0, 1.0, -3.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 1.0, 0.0)));
-    let lights = vec![directional_light];
+    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let point_light_1 = Lights::Point(PointLight::new(Vector::vec3(-1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 1.0, 0.0)));
+    let lights = vec![point_light_1];
 
     let scene = SceneData {
         scene_objects,
