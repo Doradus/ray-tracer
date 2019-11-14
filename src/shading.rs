@@ -138,8 +138,9 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let G = smith_for_ggx(n_o_l, n_o_v, a2);
     let brdf = F * G * D;
 
+    let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - F;
     *specular += brdf * brightness * n_o_l * falloff * light_color;
-    *diffuse += light_color * l.vec3_dot(n).max(0.0) * brightness * falloff;
+    *diffuse += diffuse_term * light_color * l.vec3_dot(n).max(0.0) * brightness * falloff;
 }
 
 fn ggx_distribution(n_dot_h: f32, a: f32) -> f32 {

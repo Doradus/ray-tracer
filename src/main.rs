@@ -152,7 +152,7 @@ fn main() {
     let scene_objects = vec![sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7, sphere8, sphere9, plane];
 
     let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let point_light_1 = Lights::Point(PointLight::new(Vector::vec3(-1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 1.0, 0.0)));
+    let point_light_1 = Lights::Point(PointLight::new(Vector::vec3(-1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
     let lights = vec![point_light_1];
 
     let scene = SceneData {
