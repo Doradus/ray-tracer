@@ -5,12 +5,11 @@ mod shading;
 mod ray_tracer;
 mod scene;
 mod math;
+mod test_scenes;
 
 use scene::*;
+use test_scenes::*;
 use vector::Vector;
-use matrix::Matrix;
-use geometry::*;
-use shading::*;
 use std::time::Instant;
 use ray_tracer::cast_ray;
 use std::{f32::consts, fmt};
@@ -61,104 +60,7 @@ fn main() {
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
-    let sphere1 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
-        Vector::vec3(-1.6, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere2 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0),
-        Vector::vec3(-1.2, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere3 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0),
-        Vector::vec3(-0.8, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere4 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0),
-        Vector::vec3(-0.4, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere5 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0),
-        Vector::vec3(0.0, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere6 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0),
-        Vector::vec3(0.4, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere7 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0),
-        Vector::vec3(0.8, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere8 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0),
-        Vector::vec3(1.2, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere9 = create_scene_object(
-        create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.9, 1.0),
-        Vector::vec3(1.6, -0.35, -3.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let cube = create_scene_object(
-        create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
-        Vector::vec3(0.75, 0.0, -4.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
-    );
-   
-    let plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.7, 0.7, 0.7), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0),
-        Vector::vec3(0.0, -0.5, -4.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let scene_objects = vec![sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7, sphere8, sphere9, plane];
-
-    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let point_light_1 = Lights::Point(PointLight::new(Vector::vec3(-1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
-    let lights = vec![point_light_1];
-
-    let scene = SceneData {
-        scene_objects,
-        lights
-    };
+    let scene = multi_spheres();
 
     let now = Instant::now();
 
@@ -193,32 +95,6 @@ fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &Scene
                 [(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]);
         }
     }
-}
-
-fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: Vector, rotation: Vector) -> SceneObject {
-    let scale_matrix = Matrix::scaling_matrix(scale);
-    // let rotation_matrix = Matrix::scaling_matrix(rotation);
-    let translation_matrix = Matrix::translation_matrix(position);
-    let rotation_matrix = Matrix::roatation_x(rotation.x()) * Matrix::roatation_y(rotation.y());
-    let world_matrix = scale_matrix * rotation_matrix * translation_matrix;
-    let inv_world = world_matrix.inverse().transpose();
-
-    let mut bounding_box = BoundingBox::new(mesh.vertices[0].pos * world_matrix);
-    let mut transformed_vertices = Vec::new();
-
-    for i in 0..mesh.vertices.len() {
-        let vertex = Vertex::new(mesh.vertices[i].pos * world_matrix, mesh.vertices[i].normal * inv_world);
-        bounding_box.extend_bounds(vertex.pos);   
-        transformed_vertices.push(vertex);
-    }
-
-    let mesh_data = Mesh {
-        vertices: transformed_vertices,
-        indices: mesh.indices,
-        num_tris: mesh.num_tris
-    };
-
-    SceneObject::new(mesh_data, material, bounding_box)
 }
 
 fn write_to_file(buffer: &image::RgbImage) {
