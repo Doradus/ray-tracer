@@ -3,6 +3,8 @@ use crate::ray_tracer::trace;
 use crate::scene::*;
 use crate::Stats;
 use std::f32;
+use std::f32::consts;
+use crate::math::*;
 
 pub struct DirectionalLight {
     pub direction: Vector,
@@ -48,14 +50,18 @@ pub enum Lights {
 #[derive(Clone, Copy, Debug)]
 pub struct Material {
     pub albedo: Vector,
-    pub roughness: f32
+    pub specular: Vector,
+    pub roughness: f32,
+    pub ior: f32
 }
 
 impl Material {
-    pub fn new(albedo: Vector, roughness: f32) -> Self {
+    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32) -> Self {
         Self {
             albedo: albedo,
-            roughness: roughness
+            specular: specular,
+            roughness: roughness,
+            ior: ior
         }
     }
 }
@@ -73,33 +79,40 @@ impl ShadingData {
             position: position,
             normal: normal,
             textureCoord: textureCoord,
-            material: material
+            material: material,
         }
     }
 }
 
-pub fn calculate_color(data: ShadingData, origin: Vector, lights: &[Lights], scene_object: &[SceneObject], stats: & mut Stats) -> Vector {
+pub fn calculate_color(data: ShadingData, dir: Vector, lights: &[Lights], scene_object: &[SceneObject], stats: & mut Stats) -> Vector {
     let mut diffuse = Vector::vec3(0.0, 0.0, 0.0);
+    let mut specular = Vector::vec3(0.0, 0.0, 0.0);
 
     for i in 0..lights.len() {
         match &lights[i] {
             Lights::Directional(light) => {  
-                let light_dir = -light.direction;      
-                match trace(data.position + data.normal * 0.0001, light_dir, scene_object, f32::INFINITY, stats) {
+                let l = -(light.direction.vec3_normalize());
+                match trace(data.position + data.normal * 0.0001, l, scene_object, f32::INFINITY, stats) {
                     None => {
-                        diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness;
+                        let v = -dir;
+                        let n = data.normal;
+
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, 1.0, light.brightness, light.color, &mut diffuse, &mut specular);
                     },
                     _ => ()
                 }
             },
             Lights::Point(light) => {
-                let light_dir = light.position - data.position;
-                let distance = light_dir.vec3_length();
-                let light_dir = light_dir.vec3_normalize();      
-                match trace(data.position + data.normal * 0.0001, light_dir, scene_object, distance, stats) {
+                let mut l = light.position - data.position;
+                let distance = l.vec3_length();
+                l /= distance;      
+                match trace(data.position + data.normal * 0.0001, l, scene_object, distance, stats) {
                     None => {
+                        let v = -dir;
+                        let n = data.normal;
+
                         let falloff = 1.0 / light.attenuation.vec3_dot(Vector::vec3(1.0, distance, distance * distance));
-                        diffuse += light.color * light_dir.vec3_dot(data.normal.vec3_normalize()).max(0.0) * light.brightness * falloff;
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.brightness, light.color, &mut diffuse, &mut specular);
                     },
                     _ => ()
                 }
@@ -107,5 +120,41 @@ pub fn calculate_color(data: ShadingData, origin: Vector, lights: &[Lights], sce
         }
     }
 
-    data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.3, 0.3, 0.35)
+    let color = data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.3, 0.3, 0.35) + specular;
+    Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
+}
+
+fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, brightness: f32, light_color: Vector, diffuse: &mut Vector, specular: &mut Vector) {
+    let a2 = roughness * roughness;
+
+    let h =  (v + l).vec3_normalize();
+    let n_o_v = n.vec3_dot(v).abs() + 1e-5;
+    let l_o_h = clamp(l.vec3_dot(h), 0.0, 1.0);
+    let n_o_h = clamp(n.vec3_dot(h), 0.0, 1.0);
+    let n_o_l = clamp(n.vec3_dot(l), 0.0, 1.0);
+
+    let F = schlick_fresnel_aprx(l_o_h, specular_color);
+    let D = ggx_distribution(n_o_h, a2);
+    let G = smith_for_ggx(n_o_l, n_o_v, a2);
+    let brdf = F * G * D;
+
+    let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - F;
+    *specular += brdf * brightness * n_o_l * falloff * light_color;
+    *diffuse += diffuse_term * light_color * l.vec3_dot(n).max(0.0) * brightness * falloff;
+}
+
+fn ggx_distribution(n_dot_h: f32, a: f32) -> f32 {
+    let a2 = a.powi(2);
+    a2 / (consts::PI * (n_dot_h.powi(2) * (a2 - 1.0) + 1.0).powi(2))
+}
+
+fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
+    let a2 = a * a;
+    let lambda_l = n_dot_v * ((-n_dot_l * a2 + n_dot_l) * n_dot_l + a2).sqrt();
+    let lambda_v = n_dot_l * ((-n_dot_v * a2 + n_dot_v) * n_dot_v + a2).sqrt();
+    0.5 / (lambda_l + lambda_v)  
+}
+
+fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
+    spec_color + (spec_color - 1.0) * (1.0 - l_dot_h).powi(5)
 }

@@ -238,6 +238,18 @@ impl ops::Div<f32> for Vector {
     }
 }
 
+impl ops::DivAssign<f32> for Vector {
+    #[inline]
+    fn div_assign(&mut self, _rhs: f32) {
+        *self = Self (
+            self.0 / _rhs,
+            self.1 / _rhs,
+            self.2 / _rhs,
+            self.3 / _rhs
+        );
+    }
+}
+
 impl ops::Neg for Vector {
     type Output = Self;
 
