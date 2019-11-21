@@ -17,6 +17,8 @@ pub struct PointLight {
     pub brightness: f32,
     pub color: Vector,
     pub range: f32,
+    // pub radius: f32,
+    // pub samples: f32,
     pub attenuation: Vector
 }
 
@@ -52,16 +54,18 @@ pub struct Material {
     pub albedo: Vector,
     pub specular: Vector,
     pub roughness: f32,
-    pub ior: f32
+    pub ior: f32,
+    pub transmission: f32
 }
 
 impl Material {
-    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32) -> Self {
+    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32, transmission: f32) -> Self {
         Self {
             albedo: albedo,
             specular: specular,
             roughness: roughness,
-            ior: ior
+            ior: ior,
+            transmission: transmission
         }
     }
 }

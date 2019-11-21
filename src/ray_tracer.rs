@@ -1,5 +1,5 @@
 use crate::vector::Vector;
-use crate::geometry::{Mesh};
+use crate::geometry::{Mesh, BoundingBox};
 use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
 use crate::Stats;

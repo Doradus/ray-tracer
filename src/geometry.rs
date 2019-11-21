@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::vector::Vector;
-use std::f32;
+use std::{f32, fmt};
 use std::f32::consts;
 
 pub struct Vertex {
@@ -21,23 +21,23 @@ pub struct Mesh {
     pub num_tris: u32,
 }
 
-// pub fn create_triangle() -> Mesh {
-//     let mut vertices = Vec::new();
-//     let mut indices = Vec::new();
-//     vertices.push(Vertex::new(Vector::vec3(-1.0, -1.0, 0.0),Vector::vec3(0.0, 0.0, 1.0), Vector::vec3(255.0, 0.0, 0.0)));
-//     vertices.push(Vertex::new(Vector::vec3(1.0, -1.0, 0.0), Vector::vec3(0.0, 0.0, 1.0), Vector::vec3(0.0, 255.0, 0.0)));
-//     vertices.push(Vertex::new(Vector::vec3(0.0, 1.0, 0.0), Vector::vec3(0.0, 0.0, 1.0), Vector::vec3(0.0, 0.0, 255.0)));
+pub fn create_triangle() -> Mesh {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    vertices.push(Vertex::new(Vector::vec3(-1.0, -1.0, 0.0),Vector::vec3(0.0, 0.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(1.0, -1.0, 0.0), Vector::vec3(0.0, 0.0, 1.0)));
+    vertices.push(Vertex::new(Vector::vec3(0.0, 1.0, 0.0), Vector::vec3(0.0, 0.0, 1.0)));
 
-//     indices.push(0);
-//     indices.push(1);
-//     indices.push(2);
+    indices.push(0);
+    indices.push(1);
+    indices.push(2);
 
-//     Mesh {
-//         vertices: vertices,
-//         indices: indices,
-//         num_tris: 1,
-//     }
-// }
+    Mesh {
+        vertices: vertices,
+        indices: indices,
+        num_tris: 1,
+    }
+}
 
 pub fn create_plane(width: f32, depth: f32, sub_div_width: u32, sub_div_depth: u32) -> Mesh {
     let mut vertices = Vec::new();
@@ -233,3 +233,141 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
         num_tris: tris,
     }
 }
+
+pub struct BoundingBox {
+    pub bounds:Vec<Vector>
+}
+
+impl BoundingBox {
+    pub fn new(pos: Vector) -> Self {
+        Self {
+            bounds: vec![Vector::vec3(pos.x(), pos.y(), pos.z()), Vector::vec3(pos.x(), pos.y(), pos.z())]
+        }
+    }
+    
+    pub fn extend_bounds(&mut self, pos: Vector) {
+        if pos.x() < self.bounds[0].x() {self.bounds[0].set_x(pos.x())};
+        if pos.y() < self.bounds[0].y() {self.bounds[0].set_y(pos.y())};
+        if pos.z() < self.bounds[0].z() {self.bounds[0].set_z(pos.z())};
+
+        if pos.x() > self.bounds[1].x() {self.bounds[1].set_x(pos.x())};
+        if pos.y() > self.bounds[1].y() {self.bounds[1].set_y(pos.y())};
+        if pos.z() > self.bounds[1].z() {self.bounds[1].set_z(pos.z())};
+    }
+
+    pub fn intersect(&self, ray_origin: Vector, inv_ray_dir: Vector, sign: Vector) -> bool {
+        let sign_x = sign.x() as usize;
+        let sign_y = sign.y() as usize;
+        let sign_z = sign.z() as usize;
+
+        let mut t_min = (self.bounds[sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+        let mut t_max = (self.bounds[1 - sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+
+        let t_y_min = (self.bounds[sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+        let t_y_max = (self.bounds[1 - sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+
+        if (t_min > t_y_max) || (t_y_min > t_max) {
+            return false;
+        }
+
+        if t_y_min > t_min {
+            t_min = t_y_min;
+        }
+
+        if t_y_max < t_max {
+            t_max = t_y_max;
+        }
+
+        let t_z_min = (self.bounds[sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+        let t_z_max = (self.bounds[1 - sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+
+        if (t_min > t_z_max) || (t_z_min > t_max) {
+            return false;
+        }
+
+        true
+    }
+}
+
+impl fmt::Display for BoundingBox {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+            "min bounds: {},\n max bounds: {}", self.bounds[0], self.bounds[1]
+        )
+    }
+}
+
+pub struct BoundingSpehere {
+    pub position: Vector,
+    pub radius: f32,
+    radius_sqrd: f32,
+    pub bounds:Vec<Vector>
+}
+
+impl BoundingSpehere {
+    pub fn new(pos: Vector, radius: f32) -> Self {
+        Self {
+            position: pos,
+            radius: radius,
+            radius_sqrd: radius * radius,
+            bounds: vec![Vector::vec3(pos.x(), pos.y(), pos.z()), Vector::vec3(pos.x(), pos.y(), pos.z())]
+        }
+    }
+
+    pub fn extend_bounds(&mut self, pos: Vector) {
+        if pos.x() < self.bounds[0].x() {self.bounds[0].set_x(pos.x())};
+        if pos.y() < self.bounds[0].y() {self.bounds[0].set_y(pos.y())};
+        if pos.z() < self.bounds[0].z() {self.bounds[0].set_z(pos.z())};
+
+        if pos.x() > self.bounds[1].x() {self.bounds[1].set_x(pos.x())};
+        if pos.y() > self.bounds[1].y() {self.bounds[1].set_y(pos.y())};
+        if pos.z() > self.bounds[1].z() {self.bounds[1].set_z(pos.z())};
+
+        let x = self.bounds[0].x() - self.bounds[1].x();
+        let y = self.bounds[0].x() - self.bounds[1].x();
+        let z = self.bounds[0].x() - self.bounds[1].x();
+
+        self.position.set_x(x * 0.5);
+        self.position.set_y(y * 0.5);
+        self.position.set_z(z * 0.5);
+
+        let radius = x.abs().max(y.abs()).max(z.abs());
+
+        self.radius = radius;
+        self.radius_sqrd = radius * radius;
+    }
+
+    pub fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> bool {
+        let L = self.position - ray_origin;
+
+        let tca = L.vec3_dot(ray_dir);
+
+        if tca < 0.0 {
+            return false;
+        }
+
+        let d2 = L.vec3_dot(L) - tca * tca;
+
+        if d2 > self.radius_sqrd {
+            return false;            
+        }
+
+        let mut t0;
+        let t1;
+
+        let thc = (self.radius_sqrd - d2).sqrt(); 
+        t0 = tca - thc; 
+        t1 = tca + thc; 
+
+        if t0 < 0.0 { 
+            t0 = t1;
+            if t0 < 0.0 {
+                return false;                 
+            } 
+        }
+
+        true
+    }
+}
+
+

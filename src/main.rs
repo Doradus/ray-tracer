@@ -60,7 +60,7 @@ fn main() {
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
-    let scene = multi_spheres();
+    let scene = area_ligt();
 
     let now = Instant::now();
 
