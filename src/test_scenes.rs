@@ -207,6 +207,7 @@ pub fn area_ligt() -> SceneData {
 
 pub fn gi_test() -> SceneData {
     let white = Vector::vec3(0.5, 0.5, 0.5);
+    let black = Vector::vec3(0.0, 0.0, 0.0);
     let red = Vector::vec3(0.6, 0.1, 0.1);
     let green = Vector::vec3(0.1, 0.6, 0.1);
     let cube_green = create_scene_object(
@@ -229,16 +230,16 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
-        Vector::vec3(0.0, -0.1, -2.5),
-        Vector::vec3(1.0, 1.0, 1.0),
+        Material::new(black, Vector::vec3(1.00, 0.782, 0.344), 0.3, 1.0, 0.0),
+        Vector::vec3(0.8, -0.1, -2.5),
+        Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0),
         1
     );
 
     let bottom_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
+        create_plane(8.0, 8.0, 2, 2),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.01, 1.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -246,7 +247,7 @@ pub fn gi_test() -> SceneData {
     );
 
     let top_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
+        create_plane(8.0, 8.0, 2, 2),
         Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
         Vector::vec3(0.0, 4.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
@@ -255,7 +256,7 @@ pub fn gi_test() -> SceneData {
     );
 
     let left_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
+        create_plane(8.0, 8.0, 2, 2),
         Material::new(red, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
         Vector::vec3(-2.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
@@ -264,7 +265,7 @@ pub fn gi_test() -> SceneData {
     ); 
 
     let right_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
+        create_plane(8.0, 8.0, 2, 2),
         Material::new(green, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
         Vector::vec3(2.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
@@ -273,7 +274,7 @@ pub fn gi_test() -> SceneData {
     ); 
 
     let wall_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
+        create_plane(8.0, 8.0, 2, 2),
         Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
         Vector::vec3(0.0, 0.0, -8.0),
         Vector::vec3(1.0, 1.0, 1.0),
@@ -282,7 +283,7 @@ pub fn gi_test() -> SceneData {
     );
 
     let back_plane = create_scene_object(
-        create_plane(8.0, 8.0, 5, 5),
+        create_plane(8.0, 8.0, 2, 2),
         Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
         Vector::vec3(0.0, 0.0, 1.0),
         Vector::vec3(1.0, 1.0, 1.0),

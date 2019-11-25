@@ -40,7 +40,7 @@ pub struct TraceResult {
 pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, stats: & mut Stats) -> Option<TraceResult> {
     let mut found:Option<TraceResult> = None;
     
-    if current_ray_depth > 2 {
+    if current_ray_depth > 1 {
         return found;
     }
     

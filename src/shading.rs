@@ -185,7 +185,7 @@ fn compute_indirect_light(data: ShadingData, scene: &SceneData, current_ray_dept
         t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
     );
 
-    let samples = 64;
+    let samples = 32;
     let pdf = 1.0 / (2.0 * consts::PI);
     for _ in 0..samples {
         let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
