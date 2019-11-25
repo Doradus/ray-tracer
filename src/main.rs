@@ -18,19 +18,19 @@ use image;
 struct RenderSettings {
     width:u32,
     height:u32,
-    ray_depth: u32
+    max_ray_depth: u32
 }
 
 impl RenderSettings {
     fn new(width: u32, height: u32, ray_depth: u32) -> Self {
-        Self {width: width, height: height, ray_depth: ray_depth}
+        Self {width: width, height: height, max_ray_depth: ray_depth}
     }
 }
 
 pub struct Stats {
-    pub num_rays_shot: u32,
-    pub num_tringle_tests: u32,
-    pub num_triangles_intersected: u32,
+    pub num_rays_shot: u128,
+    pub num_tringle_tests: u128,
+    pub num_triangles_intersected: u128,
     pub render_time: f64
 }
 
@@ -56,7 +56,7 @@ impl fmt::Display for Stats {
 
 fn main() {
     let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(1280, 720, 2);
+    let settings = RenderSettings::new(640, 360, 2);
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
@@ -88,7 +88,7 @@ fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &Scene
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
 
-            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, stats);
+            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, 0, stats);
 
             let pixel = buffer.get_pixel_mut(x, y);
             *pixel = image::Rgb(
