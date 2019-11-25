@@ -41,19 +41,19 @@ unsafe impl Sync for UnsafeRgbaImage {}
 struct RenderSettings {
     width:u32,
     height:u32,
-    ray_depth: u32
+    max_ray_depth: u32
 }
 
 impl RenderSettings {
     fn new(width: u32, height: u32, ray_depth: u32) -> Self {
-        Self {width: width, height: height, ray_depth: ray_depth}
+        Self {width: width, height: height, max_ray_depth: ray_depth}
     }
 }
 
 pub struct Stats {
-    pub num_rays_shot: u32,
-    pub num_tringle_tests: u32,
-    pub num_triangles_intersected: u32,
+    pub num_rays_shot: u128,
+    pub num_tringle_tests: u128,
+    pub num_triangles_intersected: u128,
     pub render_time: f64
 }
 
@@ -78,15 +78,15 @@ impl fmt::Display for Stats {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2);
-
+    let mut stats = Stats {..Default::default()};
+    let settings = RenderSettings::new(640, 360, 2);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = transmission_test();
+    let scene = gi_test();
 
     let now = Instant::now();
 
-    let cell_width = settings.width / 2;
+    let cell_width = settings.width / 3;
     let cell_height = settings.height / 2;
 
 
@@ -102,6 +102,11 @@ fn main() {
         });
 
         s.spawn(|_| {
+            let mut stats2 = Stats {..Default::default()};
+            render(2 * cell_width, 0 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats2);
+        });
+
+        s.spawn(|_| {
             let mut stats3 = Stats {..Default::default()};
             render(0 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats3);
         });
@@ -109,6 +114,11 @@ fn main() {
         s.spawn(|_| {
             let mut stats4 = Stats {..Default::default()};
             render(1 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats4);
+        });
+
+        s.spawn(|_| {
+            let mut stats4 = Stats {..Default::default()};
+            render(2 * cell_width, 1 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats4);
         });
     }).unwrap();
 
@@ -136,7 +146,7 @@ fn render(offset_x: u32, offset_y: u32, width: u32, height: u32, buffer: & Unsaf
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
 
-            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, stats);
+            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, 0, stats);
 
             buffer.put_pixel(x, y, image::Rgb([(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]));
         }
