@@ -60,7 +60,7 @@ fn main() {
 
     let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
 
-    let scene = area_ligt();
+    let scene = gi_test();
 
     let now = Instant::now();
 

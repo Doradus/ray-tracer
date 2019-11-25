@@ -124,7 +124,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, lights: &[Lights], scene_
         }
     }
 
-    let color = data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.3, 0.3, 0.35) + specular;
+    let color = data.material.albedo * diffuse + data.material.albedo * Vector::vec3(0.0, 0.0, 0.0) + specular;
     Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
 }
 
