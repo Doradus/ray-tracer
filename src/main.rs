@@ -15,6 +15,29 @@ use ray_tracer::cast_ray;
 use std::{f32::consts, fmt};
 use image;
 
+use std::cell::UnsafeCell;
+
+pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
+
+impl UnsafeRgbaImage {
+    pub fn new(img: image::RgbImage) -> Self {
+        Self(UnsafeCell::new(img))
+    }
+
+    pub fn as_ref(&self) -> &image::RgbImage {
+        unsafe { self.0.get().as_ref() }.unwrap()
+    }
+
+    pub fn put_pixel(&self, x: u32, y: u32, pixel: image::Rgb<u8>) {
+        unsafe { self.0.get().as_mut() }
+            .unwrap()
+            .put_pixel(x, y, pixel)
+    }
+}
+
+unsafe impl Sync for UnsafeRgbaImage {}
+
+#[derive(Clone, Copy, Debug)]
 struct RenderSettings {
     width:u32,
     height:u32,
@@ -57,23 +80,56 @@ impl fmt::Display for Stats {
 fn main() {
     let mut stats = Stats {..Default::default()};
     let settings = RenderSettings::new(640, 360, 2);
-
-    let mut buffer: image::RgbImage = image::ImageBuffer::new(settings.width, settings.height);
+    let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
 
     let now = Instant::now();
 
-    render(& mut buffer, settings, &scene, &mut stats);
+    let cell_width = settings.width / 3;
+    let cell_height = settings.height / 2;
+
+
+    crossbeam_utils::thread::scope(|s| {
+        s.spawn(|_| {
+            let mut stats1 = Stats {..Default::default()};
+            render(0 * cell_width, 0 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats1);
+        });
+
+        s.spawn(|_| {
+            let mut stats2 = Stats {..Default::default()};
+            render(1 * cell_width, 0 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats2);
+        });
+
+        s.spawn(|_| {
+            let mut stats2 = Stats {..Default::default()};
+            render(2 * cell_width, 0 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats2);
+        });
+
+        s.spawn(|_| {
+            let mut stats3 = Stats {..Default::default()};
+            render(0 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats3);
+        });
+
+        s.spawn(|_| {
+            let mut stats4 = Stats {..Default::default()};
+            render(1 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats4);
+        });
+
+        s.spawn(|_| {
+            let mut stats4 = Stats {..Default::default()};
+            render(2 * cell_width, 1 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats4);
+        });
+    }).unwrap();
+
 
     let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
-    stats.render_time = end;
     write_to_file(&buffer);
 
-    println!("{}", stats);
+    println!("{}", end);
 }
 
-fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
+fn render(offset_x: u32, offset_y: u32, width: u32, height: u32, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
     let origin = Vector::vec3(0.0, 0.0, 0.0);
     let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
@@ -81,22 +137,22 @@ fn render(buffer: & mut image::RgbImage, settings: RenderSettings, scene: &Scene
     let scale = (fov * 0.5).tan();
     let a = aspect_ratio * scale;
 
-    for x in 0..settings.width {
+    let end_x = width + offset_x;
+    let end_y = height + offset_y;
+    for x in offset_x..end_x {
         let p_x = (2.0 * (x as f32 + 0.5) / settings.width as f32 - 1.0) * a; 
-        for y in 0..settings.height {
+        for y in offset_y..end_y {
             let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.height as f32) * scale; 
 
             let dir = Vector::vec3(p_x, p_y, -1.0);
 
             let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, 0, stats);
 
-            let pixel = buffer.get_pixel_mut(x, y);
-            *pixel = image::Rgb(
-                [(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]);
+            buffer.put_pixel(x, y, image::Rgb([(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]));
         }
     }
 }
 
-fn write_to_file(buffer: &image::RgbImage) {
-    buffer.save("image.png").unwrap();
+fn write_to_file(buffer: & UnsafeRgbaImage) {
+    buffer.as_ref().save("image.png").unwrap();
 }
