@@ -11,5 +11,7 @@ opt-level = 3
 
 [dependencies]
 
-rand = "0.4.0"
-image = "0.22.2"
+rand = "0.7.2"
+image = "0.22.3"
+num_cpus = "1.11.1"
+crossbeam-utils = "0.7.0"
