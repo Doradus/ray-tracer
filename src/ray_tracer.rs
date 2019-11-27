@@ -3,10 +3,11 @@ use crate::geometry::{Mesh, BoundingBox};
 use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
 use crate::Stats;
+use crate::RenderSettings;
 use std::f32;
 
-pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, stats: & mut Stats) -> Vector {
-    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, current_ray_depth, stats) {
+pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
+    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, current_ray_depth, settings, stats) {
         None => Vector::vec3(0.0, 0.0, 0.0),
         Some(i) => {
             let mesh = &scene.scene_objects[i.mesh_index].mesh;
@@ -24,7 +25,7 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ra
             let normal = (v_0.normal.vec3_normalize() * (1.0 - i.u - i.v) + v_1.normal.vec3_normalize() * i.u + v_2.normal.vec3_normalize() * i.v).vec3_normalize();
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0), scene.scene_objects[i.mesh_index].material);
 
-            calculate_color(data, direction, scene, current_ray_depth, stats)
+            calculate_color(data, direction, scene, current_ray_depth, settings, stats)
         }
     }
 }
@@ -37,10 +38,10 @@ pub struct TraceResult {
     t: f32
 }
 
-pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, stats: & mut Stats) -> Option<TraceResult> {
+pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Option<TraceResult> {
     let mut found:Option<TraceResult> = None;
     
-    if current_ray_depth > 1 {
+    if current_ray_depth > settings.max_ray_depth {
         return found;
     }
     
@@ -125,7 +126,7 @@ struct TriangleIntersectResult {
 }
 
 fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vector, v_2:Vector, stats: & mut Stats) -> Option<TriangleIntersectResult> {
-    // stats.num_tringle_tests += 1;
+    stats.num_tringle_tests += 1;
 
     let v0v1  = v_1 - v_0;
     let v0v2  = v_2 - v_0;

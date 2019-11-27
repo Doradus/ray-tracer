@@ -239,7 +239,7 @@ pub fn gi_test() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.01, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),

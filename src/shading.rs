@@ -2,6 +2,7 @@ use crate::Vector;
 use crate::ray_tracer::*;
 use crate::scene::*;
 use crate::Stats;
+use crate::RenderSettings;
 use crate::matrix::Matrix;
 use std::f32;
 use std::f32::consts;
@@ -90,7 +91,7 @@ impl ShadingData {
     }
 }
 
-pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, current_ray_depth: u32, stats: & mut Stats) -> Vector {
+pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
     let mut diffuse = Vector::vec3(0.0, 0.0, 0.0);
     let mut specular = Vector::vec3(0.0, 0.0, 0.0);
 
@@ -100,7 +101,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         match &lights[i] {
             Lights::Directional(light) => {  
                 let l = -(light.direction.vec3_normalize());
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, f32::INFINITY, current_ray_depth + 1, stats) {
+                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, f32::INFINITY, current_ray_depth + 1, settings, stats) {
                     None => {
                         let v = -dir;
                         let n = data.normal;
@@ -114,7 +115,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                 let mut l = light.position - data.position;
                 let distance = l.vec3_length();
                 l /= distance;      
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, distance, current_ray_depth + 1, stats) {
+                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, distance, current_ray_depth + 1, settings, stats) {
                     None => {
                         let v = -dir;
                         let n = data.normal;
@@ -128,8 +129,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         }
     }
 
-    let color = data.material.albedo * diffuse + data.material.albedo * compute_indirect_light(data, scene, current_ray_depth, stats) + specular;
-    // let color = data.material.albedo * diffuse + specular;
+    let color = data.material.albedo * diffuse + data.material.albedo * compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats) + specular;
     Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
 }
 
@@ -168,37 +168,45 @@ fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
     spec_color + (spec_color - 1.0) * (1.0 - l_dot_h).powi(5)
 }
 
-fn compute_indirect_light(data: ShadingData, scene: &SceneData, current_ray_depth: u32, stats: & mut Stats) -> Vector {
-    //create coords
+fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
     let mut indirect_diffuse = Vector::vec3(0.0, 0.0, 0.0);
-    let t;
-    let n = data.normal;
-    if n.x().abs() > n.y().abs() {
-        t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
-    } else {
-        t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
+
+    if settings.diffuse_samples > 0 {
+        let t;
+        let n = data.normal;
+        if n.x().abs() > n.y().abs() {
+            t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
+        } else {
+            t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
+        }
+    
+        let b = n.vec3_cross(t);
+    
+        let tbn = Matrix::from_vector(
+            t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+        );
+    
+        let mut samples = settings.diffuse_samples;
+
+        if current_ray_depth > 1 {
+            samples = 1;
+        }
+
+        let pdf = 1.0 / (2.0 * consts::PI);
+        for _ in 0..samples {
+            let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+            let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+        
+            let sample = sample_hemisphere_uniform(rand1, rand2);
+        
+            let dir = sample * tbn;
+        
+            indirect_diffuse += cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, stats) * rand1;
+        }
+    
+        indirect_diffuse /= pdf;
+        indirect_diffuse /= samples as f32;
     }
-
-    let b = n.vec3_cross(t);
-
-    let tbn = Matrix::from_vector(
-        t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
-    );
-
-    let samples = 32;
-    let pdf = 1.0 / (2.0 * consts::PI);
-    for _ in 0..samples {
-        let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
-        let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
-    
-        let sample = sample_hemisphere_uniform(rand1, rand2);
-    
-        let dir = sample * tbn;
-    
-        indirect_diffuse += cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, stats) / pdf * rand1;
-    }
-
-    indirect_diffuse /= samples as f32;
 
     indirect_diffuse
 }

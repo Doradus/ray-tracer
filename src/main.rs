@@ -38,15 +38,17 @@ impl UnsafeRgbaImage {
 unsafe impl Sync for UnsafeRgbaImage {}
 
 #[derive(Clone, Copy, Debug)]
-struct RenderSettings {
-    width:u32,
-    height:u32,
-    max_ray_depth: u32
+pub struct RenderSettings {
+    pub width:u32,
+    pub height:u32,
+    pub max_ray_depth: u32,
+    pub diffuse_samples: u32,
+    pub aa_samples: u32
 }
 
 impl RenderSettings {
-    fn new(width: u32, height: u32, ray_depth: u32) -> Self {
-        Self {width: width, height: height, max_ray_depth: ray_depth}
+    fn new(width: u32, height: u32, ray_depth: u32, diffuse_samples: u32, aa_samples: u32) -> Self {
+        Self {width: width, height: height, max_ray_depth: ray_depth, diffuse_samples: diffuse_samples, aa_samples: aa_samples}
     }
 }
 
@@ -78,8 +80,7 @@ impl fmt::Display for Stats {
 }
 
 fn main() {
-    let mut stats = Stats {..Default::default()};
-    let settings = RenderSettings::new(640, 360, 2);
+    let settings = RenderSettings::new(1280, 720, 2, 32, 3);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -140,17 +141,37 @@ fn render(offset_x: u32, offset_y: u32, width: u32, height: u32, buffer: & Unsaf
     let end_x = width + offset_x;
     let end_y = height + offset_y;
     for x in offset_x..end_x {
-        let p_x = (2.0 * (x as f32 + 0.5) / settings.width as f32 - 1.0) * a; 
         for y in offset_y..end_y {
-            let p_y = (1.0 - 2.0 * (y as f32 + 0.5) / settings.height as f32) * scale; 
 
-            let dir = Vector::vec3(p_x, p_y, -1.0);
+            let mut color = Vector::vec3(0.0, 0.0, 0.0);
+            let sample_points = get_aa_distribution(settings.aa_samples);
+            for i in 0..sample_points.len() {
+                let p_x = (2.0 * (x as f32 + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
+                let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
+                let dir = Vector::vec3(p_x, p_y, -1.0);
 
-            let ray_color = cast_ray(origin, dir.vec3_normalize(), &scene, 0, stats);
+                color += cast_ray(origin, dir.vec3_normalize(), &scene, 0, settings, stats);
+            }
 
-            buffer.put_pixel(x, y, image::Rgb([(ray_color.x() * 255.0) as u8, (ray_color.y() * 255.0) as u8, (ray_color.z() * 255.0) as u8]));
+            color /= sample_points.len() as f32;
+            buffer.put_pixel(x, y, image::Rgb([(color.x() * 255.0) as u8, (color.y() * 255.0) as u8, (color.z() * 255.0) as u8]));
         }
     }
+}
+
+fn get_aa_distribution(samples: u32) -> Vec<(f32, f32)> {
+    let mut sample_pos = Vec::new();
+    for x in 0..samples {
+        for y in 0..samples {
+            let ratio = 1.0 / samples as f32;
+            let sample_pos_x = x as f32 * ratio + ratio * 0.5;
+            let sample_pos_y = y as f32 * ratio + ratio * 0.5;
+
+            sample_pos.push((sample_pos_x, sample_pos_y))
+        }
+    }
+
+    sample_pos
 }
 
 fn write_to_file(buffer: & UnsafeRgbaImage) {
