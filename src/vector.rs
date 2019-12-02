@@ -210,6 +210,30 @@ impl ops::Mul<Matrix> for Vector {
     }
 }
 
+impl ops::MulAssign<Vector> for Vector {
+    #[inline]
+    fn mul_assign(&mut self, _rhs: Vector) {
+        *self = Self (
+            self.0 * _rhs.0,
+            self.1 * _rhs.1,
+            self.2 * _rhs.2,
+            self.3 * _rhs.3
+        );
+    }
+}
+
+impl ops::MulAssign<f32> for Vector {
+    #[inline]
+    fn mul_assign(&mut self, _rhs: f32) {
+        *self = Self (
+            self.0 * _rhs,
+            self.1 * _rhs,
+            self.2 * _rhs,
+            self.3 * _rhs
+        );
+    }
+}
+
 impl ops::Div<Vector> for Vector {
     type Output = Self;
 

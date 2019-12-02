@@ -120,7 +120,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         let v = -dir;
                         let n = data.normal;
 
-                        let falloff = 1.0 / light.attenuation.vec3_dot(Vector::vec3(1.0, distance, distance * distance));
+                        let falloff = 4.0 * consts::PI * distance * distance;
                         compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.brightness, light.color, &mut diffuse, &mut specular);
                     },
                     _ => ()
@@ -129,7 +129,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         }
     }
 
-    let color = data.material.albedo * (diffuse + compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats)) + specular;
+    let color = data.material.albedo / consts::PI * (diffuse + compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats)) + specular;
     Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
 }
 
@@ -148,7 +148,7 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let brdf = F * G * D;
 
     let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - F;
-    let energy = light_color * brightness * n_o_l * falloff;
+    let energy = (light_color * brightness) / falloff * n_o_l;
     *specular += brdf * energy;
     *diffuse += diffuse_term * energy;
 }
@@ -196,19 +196,19 @@ fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_de
             samples = 1;
         }
 
-        let pdf = 1.0 / (2.0 * consts::PI);
         for _ in 0..samples {
             let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
             let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
         
-            let sample = sample_hemisphere_uniform(rand1, rand2);
+            let sample = sample_hemisphere_cosine_weighted(rand1, rand2);
         
             let dir = sample * tbn;
-        
-            indirect_diffuse += cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, stats) * rand1;
+            let pdf = sample.w();
+            indirect_diffuse += (cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, stats) / pdf) * clamp(n.vec3_dot(dir), 0.0, 1.0);
         }
     
-        indirect_diffuse /= pdf;
+        // indirect_diffuse /= pdf;
+        // indirect_diffuse /= samples as f32;
         indirect_diffuse /= samples as f32;
     }
 
@@ -222,6 +222,23 @@ fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> Vector {
 
     let x = sin_theta * phi.cos();
     let z = sin_theta * phi.sin();
+    let pdf = 1.0 / (2.0 * consts::PI);
+    Vector::vec4(x, rand1, z, pdf)
+}
 
-    Vector::vec3(x, rand1, z)
+#[inline]
+fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> Vector {
+    let sin2_theta  = rand1;
+    let cos2_theta = 1.0 - sin2_theta;
+    let sin_theta = sin2_theta.sqrt();
+    let cos_theta = cos2_theta.sqrt();
+
+    let phi = 2.0 * consts::PI * rand2;
+
+    let x = sin_theta * phi.cos();
+    let z = sin_theta * phi.sin();
+
+    let pdf = cos_theta / consts::PI;
+
+    Vector::vec4(x, cos_theta, z, pdf)
 }

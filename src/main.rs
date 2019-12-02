@@ -14,9 +14,10 @@ use std::time::Instant;
 use ray_tracer::cast_ray;
 use std::{f32::consts, fmt};
 use image;
-use std::sync::{Arc,Mutex};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::UnsafeCell;
+use rand::Rng;
+
 
 
 pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
@@ -72,8 +73,6 @@ impl Default for Stats {
     }
 }
 
-
-
 impl fmt::Display for Stats {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
@@ -83,7 +82,6 @@ impl fmt::Display for Stats {
     }
 }
 
-
 #[derive(Copy, Clone)]
 struct RenderThreadInfo {
     pub offset: (u32, u32),
@@ -91,7 +89,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 1, 0, 1);
+    let settings = RenderSettings::new(1280, 720, 3, 8, 2);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -123,6 +121,7 @@ fn main() {
             });       
         };
     }).unwrap();
+
 
 
     let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
