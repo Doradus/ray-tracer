@@ -11,6 +11,7 @@ pub struct Matrix {
 }
 
 impl Matrix {
+    #[inline]
     pub fn identity() -> Self {
         Self {
             row_1: Vector::vec4(1.0, 0.0, 0.0, 0.0),
@@ -20,6 +21,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn from_vector(v_0: Vector, v_1: Vector, v_2: Vector, v_3: Vector) -> Self {
         Self {
             row_1: v_0,
@@ -29,6 +31,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn determinant(&self) -> f32 {
         let (m00, m01, m02, m03) = self.row_1.into();
         let (m10, m11, m12, m13) = self.row_2.into();
@@ -48,6 +51,7 @@ impl Matrix {
 			m30 * (m01 * c - m11 * e + m21 * f)
     }
 
+    #[inline]
     pub fn inverse(&self) -> Self {
         let (m00, m01, m02, m03) = self.row_1.into();
         let (m10, m11, m12, m13) = self.row_2.into();
@@ -173,6 +177,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn transpose(&self) -> Self {
         let (m00, m01, m02, m03) = self.row_1.into();
         let (m10, m11, m12, m13) = self.row_2.into();
@@ -187,6 +192,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn scaling_matrix(v:Vector) -> Self {
         Self {
             row_1: Vector::vec4(v.x(), 0.0, 0.0, 0.0),
@@ -196,6 +202,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn translation_matrix(t: Vector) -> Self {
         Self {
             row_1: Vector::vec4(1.0, 0.0, 0.0, 0.0),
@@ -205,6 +212,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn roatation_x(rotation: f32) -> Self {
         Self {
             row_1: Vector::vec4(1.0, 0.0, 0.0, 0.0),
@@ -214,6 +222,7 @@ impl Matrix {
         }
     }
 
+    #[inline]
     pub fn roatation_y(rotation: f32) -> Self {
         Self {
             row_1: Vector::vec4(rotation.cos(), 0.0, -rotation.sin(), 0.0),
@@ -232,6 +241,8 @@ impl fmt::Display for Matrix {
 
 impl ops::Mul<Matrix> for Matrix {
     type Output = Self;
+    
+    #[inline]
     fn mul(self, rhs: Self) -> Self {
         let x = self.row_1.x();
         let y = self.row_1.y();

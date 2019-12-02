@@ -7,9 +7,12 @@ use crate::math::*;
 use std::f32::consts;
 
 pub fn multi_spheres() -> SceneData {
+    let diffuse = Vector::vec3(0.01, 0.01, 0.01);
+    let specular = Vector::vec3(1.0, 0.782, 0.344);
+
     let sphere1 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.1, 1.0, 0.0),
         Vector::vec3(-1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -18,7 +21,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere2 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.2, 1.0, 0.0),
         Vector::vec3(-1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -27,7 +30,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere3 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.3, 1.0, 0.0),
         Vector::vec3(-0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -36,7 +39,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere4 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.4, 1.0, 0.0),
         Vector::vec3(-0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -45,7 +48,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere5 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.5, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.5, 1.0, 0.0),
         Vector::vec3(0.0, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -54,7 +57,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere6 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.6, 1.0, 0.0),
         Vector::vec3(0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -63,7 +66,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere7 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.7, 1.0, 0.0),
         Vector::vec3(0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -72,7 +75,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere8 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.8, 1.0, 0.0),
         Vector::vec3(1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -81,25 +84,16 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere9 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.9, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.9, 1.0, 0.0),
         Vector::vec3(1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
         0
     );
-
-    let cube = create_scene_object(
-        create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.05, 0.05, 0.05), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
-        Vector::vec3(0.75, 0.0, -4.0),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0),
-        0
-    );
    
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.7, 0.7, 0.7), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -166,8 +160,17 @@ pub fn transmission_test() -> SceneData {
 pub fn area_ligt() -> SceneData {
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
-        Vector::vec3(0.0, -0.1, -2.5),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Vector::vec3(-0.3, -0.1, -2.5),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(0.0, 0.0, 0.0),
+        1
+    );
+
+    let sphere = create_scene_object(
+        create_sphere(0.4, 40, 20),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0),
+        Vector::vec3(0.3, -0.1, -2.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
         1
@@ -193,9 +196,11 @@ pub fn area_ligt() -> SceneData {
 
     let scene_objects = vec![bottom_plane, wall_plane, sphere];
 
-    let point_light = Lights::Point(PointLight::new(Vector::vec3(0.3, 1.0, -1.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
+    // let point_light = Lights::Point(PointLight::new(Vector::vec3(0.3, 1.0, -1.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
+    // let lights = vec![point_light];
 
-    let lights = vec![point_light];
+    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -0.8), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let lights = vec![directional_light];
 
     let scene = SceneData {
         scene_objects,

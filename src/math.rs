@@ -1,5 +1,6 @@
 use std::f32::consts;
 
+#[inline]
 pub fn clamp<T>(value: T, min: T, max: T) -> T 
     where T : PartialOrd {
         if value < min {
@@ -11,6 +12,7 @@ pub fn clamp<T>(value: T, min: T, max: T) -> T
         }
 }
 
+#[inline]
 pub fn degree_to_radians(deg: f32) -> f32 {
     deg * consts::PI / 180.0 
 }

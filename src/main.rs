@@ -14,8 +14,10 @@ use std::time::Instant;
 use ray_tracer::cast_ray;
 use std::{f32::consts, fmt};
 use image;
-
+use std::sync::{Arc,Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::UnsafeCell;
+
 
 pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
 
@@ -70,6 +72,8 @@ impl Default for Stats {
     }
 }
 
+
+
 impl fmt::Display for Stats {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
@@ -79,48 +83,45 @@ impl fmt::Display for Stats {
     }
 }
 
+
+#[derive(Copy, Clone)]
+struct RenderThreadInfo {
+    pub offset: (u32, u32),
+    pub dimensions: (u32, u32)
+}
+
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2, 32, 3);
+    let settings = RenderSettings::new(1280, 720, 1, 0, 1);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
 
+    let max_threads = num_cpus::get();
+
+    let y_divisions = (max_threads as f32).sqrt().floor();
+    let x_divisions = (max_threads as f32) / y_divisions;
+
+    let mut thread_info = Vec::new();
+
+    let cell_width = settings.width / (x_divisions as u32);
+    let cell_height = settings.height / (y_divisions as u32); 
+
+    for y in 0..x_divisions as u32 {
+        for x in 0..x_divisions as u32 {
+            thread_info.push(RenderThreadInfo {offset: (x * cell_width, y * cell_height), dimensions: (cell_width, cell_height)});
+        }
+    }
+
+    let thread_counter = AtomicUsize::new(0);
     let now = Instant::now();
-
-    let cell_width = settings.width / 3;
-    let cell_height = settings.height / 2;
-
-
     crossbeam_utils::thread::scope(|s| {
-        s.spawn(|_| {
-            let mut stats1 = Stats {..Default::default()};
-            render(0 * cell_width, 0 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats1);
-        });
-
-        s.spawn(|_| {
-            let mut stats2 = Stats {..Default::default()};
-            render(1 * cell_width, 0 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats2);
-        });
-
-        s.spawn(|_| {
-            let mut stats2 = Stats {..Default::default()};
-            render(2 * cell_width, 0 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats2);
-        });
-
-        s.spawn(|_| {
-            let mut stats3 = Stats {..Default::default()};
-            render(0 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats3);
-        });
-
-        s.spawn(|_| {
-            let mut stats4 = Stats {..Default::default()};
-            render(1 * cell_width, 1 * cell_height, cell_width, cell_height, &buffer, settings, &scene, &mut stats4);
-        });
-
-        s.spawn(|_| {
-            let mut stats4 = Stats {..Default::default()};
-            render(2 * cell_width, 1 * cell_height, cell_width + 1, cell_height, &buffer, settings, &scene, &mut stats4);
-        });
+        for _ in 0..max_threads {
+            s.spawn(|_| {   
+                let mut stats = Stats {..Default::default()};
+                let i = thread_counter.fetch_add(1, Ordering::Relaxed);
+                render(thread_info[i], &buffer, settings, &scene, &mut stats);
+            });       
+        };
     }).unwrap();
 
 
@@ -130,7 +131,7 @@ fn main() {
     println!("{}", end);
 }
 
-fn render(offset_x: u32, offset_y: u32, width: u32, height: u32, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
+fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
     let origin = Vector::vec3(0.0, 0.0, 0.0);
     let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
@@ -138,10 +139,10 @@ fn render(offset_x: u32, offset_y: u32, width: u32, height: u32, buffer: & Unsaf
     let scale = (fov * 0.5).tan();
     let a = aspect_ratio * scale;
 
-    let end_x = width + offset_x;
-    let end_y = height + offset_y;
-    for x in offset_x..end_x {
-        for y in offset_y..end_y {
+    let end_x = info.dimensions.0 + info.offset.0;
+    let end_y = info.dimensions.1 + info.offset.1;
+    for x in info.offset.0..end_x {
+        for y in info.offset.1..end_y {
 
             let mut color = Vector::vec3(0.0, 0.0, 0.0);
             let sample_points = get_aa_distribution(settings.aa_samples);

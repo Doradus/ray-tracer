@@ -129,7 +129,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         }
     }
 
-    let color = data.material.albedo * diffuse + data.material.albedo * compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats) + specular;
+    let color = data.material.albedo * (diffuse + compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats)) + specular;
     Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
 }
 
@@ -148,15 +148,18 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let brdf = F * G * D;
 
     let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - F;
-    *specular += brdf * brightness * n_o_l * falloff * light_color;
-    *diffuse += diffuse_term * light_color * l.vec3_dot(n).max(0.0) * brightness * falloff;
+    let energy = light_color * brightness * n_o_l * falloff;
+    *specular += brdf * energy;
+    *diffuse += diffuse_term * energy;
 }
 
+#[inline]
 fn ggx_distribution(n_dot_h: f32, a: f32) -> f32 {
     let a2 = a.powi(2);
     a2 / (consts::PI * (n_dot_h.powi(2) * (a2 - 1.0) + 1.0).powi(2))
 }
 
+#[inline]
 fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
     let a2 = a * a;
     let lambda_l = n_dot_v * ((-n_dot_l * a2 + n_dot_l) * n_dot_l + a2).sqrt();
@@ -164,6 +167,7 @@ fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
     0.5 / (lambda_l + lambda_v)  
 }
 
+#[inline]
 fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
     spec_color + (spec_color - 1.0) * (1.0 - l_dot_h).powi(5)
 }
@@ -188,7 +192,7 @@ fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_de
     
         let mut samples = settings.diffuse_samples;
 
-        if current_ray_depth > 1 {
+        if current_ray_depth > 0 {
             samples = 1;
         }
 
@@ -211,6 +215,7 @@ fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_de
     indirect_diffuse
 }
 
+#[inline]
 fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> Vector {
     let sin_theta = (1.0 - rand1 * rand1).sqrt();
     let phi = 2.0 * consts::PI * rand2;
