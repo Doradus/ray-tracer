@@ -90,7 +90,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2, 8, 8, 2);
+    let settings = RenderSettings::new(1280, 720, 2, 0, 32, 2);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
