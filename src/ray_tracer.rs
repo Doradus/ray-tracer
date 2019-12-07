@@ -6,8 +6,16 @@ use crate::Stats;
 use crate::RenderSettings;
 use std::f32;
 
-pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
-    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, current_ray_depth, settings, stats) {
+#[derive(PartialEq, Copy, Clone)]
+pub enum RayType {
+    CameraRay,
+    ShadowRay,
+    SpecularRay,
+    DiffuseRay
+} 
+
+pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
+    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, current_ray_depth, settings, ray_type, stats) {
         None => Vector::vec3(0.0, 0.0, 0.0),
         Some(i) => {
             let mesh = &scene.scene_objects[i.mesh_index].mesh;
@@ -25,7 +33,7 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ra
             let normal = (v_0.normal.vec3_normalize() * (1.0 - i.u - i.v) + v_1.normal.vec3_normalize() * i.u + v_2.normal.vec3_normalize() * i.v).vec3_normalize();
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0), scene.scene_objects[i.mesh_index].material);
 
-            calculate_color(data, direction, scene, current_ray_depth, settings, stats)
+            calculate_color(data, direction, scene, current_ray_depth, settings, ray_type, stats)
         }
     }
 }
@@ -38,7 +46,7 @@ pub struct TraceResult {
     t: f32
 }
 
-pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Option<TraceResult> {
+pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Option<TraceResult> {
     let mut found:Option<TraceResult> = None;
     
     if current_ray_depth > settings.max_ray_depth {

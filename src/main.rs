@@ -11,7 +11,7 @@ use scene::*;
 use test_scenes::*;
 use vector::Vector;
 use std::time::Instant;
-use ray_tracer::cast_ray;
+use ray_tracer::{RayType, cast_ray};
 use std::{f32::consts, fmt};
 use image;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -46,12 +46,13 @@ pub struct RenderSettings {
     pub height:u32,
     pub max_ray_depth: u32,
     pub diffuse_samples: u32,
+    pub specular_samples: u32,
     pub aa_samples: u32
 }
 
 impl RenderSettings {
-    fn new(width: u32, height: u32, ray_depth: u32, diffuse_samples: u32, aa_samples: u32) -> Self {
-        Self {width: width, height: height, max_ray_depth: ray_depth, diffuse_samples: diffuse_samples, aa_samples: aa_samples}
+    fn new(width: u32, height: u32, ray_depth: u32, diffuse_samples: u32, specular_samples: u32, aa_samples: u32) -> Self {
+        Self {width: width, height: height, max_ray_depth: ray_depth, diffuse_samples: diffuse_samples, specular_samples: specular_samples, aa_samples: aa_samples}
     }
 }
 
@@ -89,7 +90,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 3, 8, 2);
+    let settings = RenderSettings::new(1280, 720, 2, 8, 8, 2);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -150,7 +151,7 @@ fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSet
                 let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
                 let dir = Vector::vec3(p_x, p_y, -1.0);
 
-                color += cast_ray(origin, dir.vec3_normalize(), &scene, 0, settings, stats);
+                color += cast_ray(origin, dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
             }
 
             color /= sample_points.len() as f32;

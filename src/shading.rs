@@ -91,7 +91,7 @@ impl ShadingData {
     }
 }
 
-pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
+pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
     let mut diffuse = Vector::vec3(0.0, 0.0, 0.0);
     let mut specular = Vector::vec3(0.0, 0.0, 0.0);
 
@@ -101,7 +101,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         match &lights[i] {
             Lights::Directional(light) => {  
                 let l = -(light.direction.vec3_normalize());
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, f32::INFINITY, current_ray_depth + 1, settings, stats) {
+                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, f32::INFINITY, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
                     None => {
                         let v = -dir;
                         let n = data.normal;
@@ -115,7 +115,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                 let mut l = light.position - data.position;
                 let distance = l.vec3_length();
                 l /= distance;      
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, distance, current_ray_depth + 1, settings, stats) {
+                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
                     None => {
                         let v = -dir;
                         let n = data.normal;
@@ -129,7 +129,8 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         }
     }
 
-    let color = data.material.albedo / consts::PI * (diffuse + compute_indirect_diffuse(data, scene, current_ray_depth, settings, stats)) + specular;
+    // let color = data.material.albedo / consts::PI * compute_indirect_diffuse(&data, scene, current_ray_depth, settings, ray_type, stats);
+    let color = data.material.albedo / consts::PI * (diffuse + compute_indirect_diffuse(&data, scene, current_ray_depth, settings, ray_type, stats)) + specular + compute_indirect_specular(dir, &data, scene, current_ray_depth, settings, ray_type, stats);
     Vector::vec3(clamp(color.x(), 0.0, 1.0), clamp(color.y(), 0.0, 1.0), clamp(color.z(), 0.0, 1.0))
 }
 
@@ -172,10 +173,10 @@ fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
     spec_color + (spec_color - 1.0) * (1.0 - l_dot_h).powi(5)
 }
 
-fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, stats: & mut Stats) -> Vector {
+fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
     let mut indirect_diffuse = Vector::vec3(0.0, 0.0, 0.0);
 
-    if settings.diffuse_samples > 0 {
+    if settings.diffuse_samples > 0 && (ray_type == RayType::CameraRay || ray_type == RayType::DiffuseRay) && current_ray_depth < settings.max_ray_depth {
         let t;
         let n = data.normal;
         if n.x().abs() > n.y().abs() {
@@ -202,32 +203,91 @@ fn compute_indirect_diffuse(data: ShadingData, scene: &SceneData, current_ray_de
         
             let sample = sample_hemisphere_cosine_weighted(rand1, rand2);
         
-            let dir = sample * tbn;
-            let pdf = sample.w();
-            indirect_diffuse += (cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, stats) / pdf) * clamp(n.vec3_dot(dir), 0.0, 1.0);
+            let dir = (sample.0 * tbn).vec3_normalize();
+            let pdf = sample.1;
+            indirect_diffuse += (cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, RayType::DiffuseRay, stats) / pdf) * clamp(dir.vec3_dot(n), 0.0, 1.0);
         }
     
-        // indirect_diffuse /= pdf;
-        // indirect_diffuse /= samples as f32;
-        indirect_diffuse /= samples as f32;
+         indirect_diffuse /= samples as f32;
     }
 
     indirect_diffuse
 }
 
+fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
+    let mut indirect_specular = Vector::vec3(0.0, 0.0, 0.0);
+
+    if settings.specular_samples > 0 && (ray_type == RayType::CameraRay || ray_type == RayType::SpecularRay) && current_ray_depth < settings.max_ray_depth {
+        let t;
+        let n = data.normal;
+        if n.x().abs() > n.y().abs() {
+            t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
+        } else {
+            t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
+        }
+    
+        let b = n.vec3_cross(t);
+    
+        let tbn = Matrix::from_vector(
+            t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+        );
+    
+        let mut samples = settings.specular_samples;
+
+        if current_ray_depth > 0 {
+            samples = 1;
+        }
+
+        let V = -dir;
+        for _ in 0..samples {
+            let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+            let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+        
+            let a2 = data.material.roughness * data.material.roughness;
+
+            let sample = importance_sample_ggx(rand1, rand2, a2);
+        
+            let H = (sample.0 * tbn).vec3_normalize();
+			let L = (H * 2.0 * V.vec3_dot(H)) - V;
+
+            let pdf = sample.1;
+
+            let light_color = cast_ray(data.position + L * 0.0001, L, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats) / pdf;
+
+            let n_o_v = n.vec3_dot(V).abs() + 1e-5;
+            let l_o_h = clamp(L.vec3_dot(H), 0.0, 1.0);
+            let v_o_h = clamp(V.vec3_dot(H), 0.0, 1.0);
+            let n_o_h = clamp(n.vec3_dot(H), 0.0, 1.0);
+            let n_o_l = clamp(n.vec3_dot(L), 0.0, 1.0);
+
+
+            let F = schlick_fresnel_aprx(v_o_h, data.material.specular);
+            let D = ggx_distribution(n_o_h, a2);
+            let G = smith_for_ggx(n_o_l, n_o_v, a2);
+            let brdf = F * D * G * light_color;
+
+            indirect_specular += brdf * n_o_l;
+        }
+    
+        indirect_specular /= samples as f32;
+    }
+
+    indirect_specular
+}
+
 #[inline]
-fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> Vector {
+fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> (Vector, f32) {
     let sin_theta = (1.0 - rand1 * rand1).sqrt();
     let phi = 2.0 * consts::PI * rand2;
 
     let x = sin_theta * phi.cos();
     let z = sin_theta * phi.sin();
     let pdf = 1.0 / (2.0 * consts::PI);
-    Vector::vec4(x, rand1, z, pdf)
+    (Vector::vec3(x, sin_theta, z), pdf)
 }
 
 #[inline]
-fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> Vector {
+fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> (Vector, f32) {
     let sin2_theta  = rand1;
     let cos2_theta = 1.0 - sin2_theta;
     let sin_theta = sin2_theta.sqrt();
@@ -240,5 +300,23 @@ fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> Vector {
 
     let pdf = cos_theta / consts::PI;
 
-    Vector::vec4(x, cos_theta, z, pdf)
+    (Vector::vec3(x, cos_theta, z), pdf)
+}
+
+#[inline]
+fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32) {
+	let a2 = roughness * roughness;
+
+	let phi = 2.0 * consts::PI * rand1;
+	let cos_theta = ((1.0 - rand2) / ( 1.0 + (a2 - 1.0) * rand2 )).sqrt();
+	let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+	let x = sin_theta * phi.cos();
+	let z = sin_theta * phi.sin();
+	
+	let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
+	let D = a2 / (consts::PI * d * d);
+	let pdf = D * cos_theta;
+
+    (Vector::vec3(x, cos_theta, z), pdf)
 }
