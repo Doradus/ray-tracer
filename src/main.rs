@@ -1,4 +1,5 @@
 mod vector;
+mod vector_simd;
 mod matrix;
 mod geometry;
 mod shading;
@@ -10,6 +11,7 @@ mod test_scenes;
 use scene::*;
 use test_scenes::*;
 use vector::Vector;
+use vector_simd::VectorSimd;
 use std::time::Instant;
 use ray_tracer::{RayType, cast_ray};
 use std::{f32::consts, fmt};
@@ -90,7 +92,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2, 0, 32, 2);
+    let settings = RenderSettings::new(1280, 720, 1, 0, 0, 1);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -104,6 +106,18 @@ fn main() {
 
     let cell_width = settings.width / (x_divisions as u32);
     let cell_height = settings.height / (y_divisions as u32); 
+
+    let vector_one = Vector::vec3(3.0, 1.0, 4.0);
+    let vector_two = Vector::vec3(1.0, 6.0, 2.0);
+    let length = vector_one.vec3_length();
+
+    let vector_simd_one = VectorSimd::vec3(3.0, 1.0, 4.0);
+    let vector_simd_two = VectorSimd::vec3(1.0, 6.0, 2.0);
+    let length_simd = vector_simd_one.vec3_length_f32();
+
+    println!("length from standard vector: {}", length);
+    println!("length from simd vector: {}", length_simd);
+
 
     for y in 0..x_divisions as u32 {
         for x in 0..x_divisions as u32 {

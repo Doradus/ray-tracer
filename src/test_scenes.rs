@@ -260,7 +260,7 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(black, chrome_spec, 0.2, 1.0, 0.0),
         Vector::vec3(-1.2, -0.3, -2.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -269,7 +269,7 @@ pub fn gi_test() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(black, chrome_spec, 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
