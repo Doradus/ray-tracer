@@ -57,25 +57,42 @@ impl VectorSimd {
         unsafe { _mm_cvtss_f32(_mm_sqrt_ss(self.vec3_dot_internal(self)))}
     }
 
-//     #[inline]
-//     pub fn vec3_length_reciprocal(self) -> f32 {
-//         1.0 / self.vec3_length()
-//     }
+    #[inline]
+    pub fn vec3_length_reciprocal(self) -> Self {
+        unsafe {
+            Self (_mm_div_ps(_mm_set_ps1(1.0), _mm_sqrt_ps(self.vec3_dot_internal(self))))
+        }
+    }
 
-//     #[inline]
-//     pub fn vec3_normalize(self) -> Self {
-//         self * self.vec3_length_reciprocal()
-//     }
+    #[inline]
+    pub fn vec3_length_reciprocal_f32(self) -> f32 {
+        unsafe { _mm_cvtss_f32(_mm_div_ps(_mm_set_ps1(1.0), _mm_sqrt_ps(self.vec3_dot_internal(self)))) }
+    }
 
-//     #[inline]
-//     pub fn vec3_cross(self, v2: Self) -> Self {
-//         Self (
-//             self.1 * v2.2 - self.2 * v2.1,
-//             self.2 * v2.0 - self.0 * v2.2,
-//             self.0 * v2.1 - self.1 * v2.0,
-//             0.0
-//         )
-//     }
+    #[inline]
+    pub fn vec3_normalize(self) -> Self {
+        unsafe {
+            Self (_mm_mul_ps(self.0, _mm_div_ps(_mm_set_ps1(1.0), _mm_sqrt_ps(self.vec3_dot_internal(self)))))
+        }
+    }
+
+    #[inline]
+    unsafe fn vec3_cross_internal(self, v2: Self) -> __m128 {
+        let temp1 = _mm_shuffle_ps(self.0, self.0, 0b11_01_00_10);
+        let temp2 = _mm_shuffle_ps(v2.0, v2.0, 0b11_01_00_10);
+
+        let mul1 = _mm_mul_ps(temp1, v2.0);
+        let mul2 = _mm_mul_ps(temp2, self.0);
+
+        let sub = _mm_sub_ps(mul1, mul2);
+
+        _mm_shuffle_ps(sub, sub, 0b11_01_00_10)
+    }
+
+    #[inline]
+    pub fn vec3_cross(self, v2: Self) -> Self {
+        unsafe{ Self(self.vec3_cross_internal(v2)) }
+    }
 
     #[inline]
     pub fn x (self) -> f32 {

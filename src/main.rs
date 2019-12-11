@@ -107,16 +107,16 @@ fn main() {
     let cell_width = settings.width / (x_divisions as u32);
     let cell_height = settings.height / (y_divisions as u32); 
 
-    let vector_one = Vector::vec3(3.0, 1.0, 4.0);
-    let vector_two = Vector::vec3(1.0, 6.0, 2.0);
-    let length = vector_one.vec3_length();
+    let vector_one = Vector::vec3(1.0, 0.0, 0.0);
+    let vector_two = Vector::vec3(0.0, 1.0, 0.0);
+    let cross = vector_one.vec3_cross(vector_two);
 
-    let vector_simd_one = VectorSimd::vec3(3.0, 1.0, 4.0);
-    let vector_simd_two = VectorSimd::vec3(1.0, 6.0, 2.0);
-    let length_simd = vector_simd_one.vec3_length_f32();
+    let vector_simd_one = VectorSimd::vec3(1.0, 0.0, 0.0);
+    let vector_simd_two = VectorSimd::vec3(0.0, 1.0, 0.0);
+    let cross_simd = vector_simd_one.vec3_cross(vector_simd_two);
 
-    println!("length from standard vector: {}", length);
-    println!("length from simd vector: {}", length_simd);
+    println!("normalize from standard vector: {}", cross);
+    println!("normalize from simd vector: {} {} {}", cross_simd.x(), cross_simd.y(), cross_simd.z());
 
 
     for y in 0..x_divisions as u32 {
