@@ -2,9 +2,11 @@ use crate::matrix::Matrix;
 use crate::geometry::*;
 use crate::shading::*;
 use crate::scene::*;
-use crate::vector::*;
+use crate::vector_simd::*;
 use crate::math::*;
 use std::f32::consts;
+use std::time::Instant;
+
 
 pub fn multi_spheres() -> SceneData {
     let diffuse = Vector::vec3(0.01, 0.01, 0.01);
@@ -260,7 +262,7 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(black, chrome_spec, 0.2, 1.0, 0.0),
         Vector::vec3(-1.2, -0.3, -2.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -269,7 +271,7 @@ pub fn gi_test() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(black, chrome_spec, 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0),
@@ -337,6 +339,8 @@ pub fn gi_test() -> SceneData {
 }
 
 fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: Vector, rotation: Vector, bounding_volume_type: u32) -> SceneObject {
+    let now = Instant::now();
+
     let scale_matrix = Matrix::scaling_matrix(scale);
     let translation_matrix = Matrix::translation_matrix(position);
     let rotation_matrix = Matrix::roatation_x(rotation.x()) * Matrix::roatation_y(rotation.y());
@@ -357,6 +361,9 @@ fn create_scene_object(mesh: Mesh, material: Material, position:Vector, scale: V
         indices: mesh.indices,
         num_tris: mesh.num_tris
     };
+
+    let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
+    println!("generated scene in {} s", end);
 
     SceneObject::new(mesh_data, material, bounding_box)
 }

@@ -1,4 +1,5 @@
-mod vector;
+// mod vector;
+mod vector_simd;
 mod matrix;
 mod geometry;
 mod shading;
@@ -9,7 +10,8 @@ mod test_scenes;
 
 use scene::*;
 use test_scenes::*;
-use vector::Vector;
+use vector_simd::Vector;
+// use vector_simd::VectorSimd;
 use std::time::Instant;
 use ray_tracer::{RayType, cast_ray};
 use std::{f32::consts, fmt};
@@ -90,7 +92,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2, 0, 32, 2);
+    let settings = RenderSettings::new(1280, 720, 1, 3, 3, 8);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -155,16 +157,18 @@ fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSet
             }
 
             color /= sample_points.len() as f32;
-            buffer.put_pixel(x, y, image::Rgb([(color.x() * 255.0) as u8, (color.y() * 255.0) as u8, (color.z() * 255.0) as u8]));
+            color *= 255.0;
+            buffer.put_pixel(x, y, image::Rgb([color.x() as u8, color.y() as u8, color.z() as u8]));
         }
     }
 }
 
 fn get_aa_distribution(samples: u32) -> Vec<(f32, f32)> {
     let mut sample_pos = Vec::new();
+    let ratio = 1.0 / samples as f32;
+
     for x in 0..samples {
         for y in 0..samples {
-            let ratio = 1.0 / samples as f32;
             let sample_pos_x = x as f32 * ratio + ratio * 0.5;
             let sample_pos_y = y as f32 * ratio + ratio * 0.5;
 

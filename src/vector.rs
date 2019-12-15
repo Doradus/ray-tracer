@@ -1,10 +1,9 @@
 #![allow(dead_code)]
-use std::{ops, fmt};
 use crate::matrix::Matrix;
+use std::{ops, fmt};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector (f32, f32, f32, f32);
-
 
 impl Vector {
 

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::{ops, fmt};
-use crate::vector::Vector;
+use crate::vector_simd::Vector;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Matrix {
