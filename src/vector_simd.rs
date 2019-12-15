@@ -9,9 +9,9 @@ use std::arch::x86_64::*;
 use std::{ops, fmt, mem};
 
 #[derive(Clone, Copy, Debug)]
-pub struct VectorSimd (__m128);
+pub struct Vector (__m128);
 
-impl VectorSimd {
+impl Vector {
 
     #[inline]
     pub fn vec2(x: f32, y: f32) -> Self {
@@ -45,6 +45,11 @@ impl VectorSimd {
     #[inline]
     pub fn vec3_dot(self, other: Self) -> Self {
         unsafe { Self(self.vec3_dot_internal(other))}
+    }
+
+    #[inline]
+    pub fn vec3_dot_f32(self, other: Self) -> f32 {
+        unsafe { _mm_cvtss_f32(self.vec3_dot_internal(other))}
     }
 
     #[inline]
@@ -114,229 +119,256 @@ impl VectorSimd {
         unsafe { _mm_cvtss_f32(_mm_shuffle_ps(self.0, self.0, 0b00_00_00_11)) }
     }
 
-//     #[inline]
-//     pub fn set_x(&mut self, x: f32) {
-//         self.0 = x;
-//     }
+    #[inline]
+    pub fn set_x(&mut self, x: f32) {
+        unsafe {self.0 = _mm_move_ss(self.0, _mm_set_ss(x)); }
+    }
 
-//     #[inline]
-//     pub fn set_y(&mut self, y: f32) {
-//         self.1 = y;
-//     }
+    #[inline]
+    pub fn set_y(&mut self, y: f32) {
+        unsafe { 
+            let temp = _mm_move_ss(self.0, _mm_set_ss(y));
+            let temp = _mm_shuffle_ps(temp, self.0, 0b11_10_00_00);
+            self.0 = _mm_move_ss(temp, self.0);
+         }
+    }
 
-//     #[inline]
-//     pub fn set_z(&mut self, z: f32) {
-//         self.2 = z;
-//     }
+    #[inline]
+    pub fn set_z(&mut self, z: f32) {
+        unsafe { 
+            let temp = _mm_move_ss(self.0, _mm_set_ss(z));
+            self.0 = _mm_shuffle_ps(self.0, temp, 0b11_00_01_00);
+         }
+    }
 
-//     #[inline]
-//     pub fn set_w(&mut self, w: f32) {
-//         self.3 = w;
-//     }
-// }
+    #[inline]
+    pub fn set_w(&mut self, w: f32) {
+        unsafe { 
+            let temp = _mm_move_ss(self.0, _mm_set_ss(w));
+            self.0 = _mm_shuffle_ps(self.0, temp, 0b00_10_01_00);
+         }
+    }
 
-// impl fmt::Display for Vector {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "({}, {}, {}, {})", self.0, self.1, self.2, self.3)
-//     }
-// }
+    #[inline]
+    pub fn splat_x(self) -> Self {
+        unsafe { Self (_mm_shuffle_ps(self.0, self.0, 0b00_00_00_00)) }
+    }
 
-// impl ops::Add<Vector> for Vector {
-//     type Output = Self;
+    #[inline]
+    pub fn splat_y(self) -> Self {
+        unsafe { Self (_mm_shuffle_ps(self.0, self.0, 0b01_01_01_01)) }
+    }
 
-//     #[inline]
-//     fn add(self, _rhs: Self) -> Self {
-//         Self (
-//             self.0 + _rhs.0,
-//             self.1 + _rhs.1,
-//             self.2 + _rhs.2,
-//             self.3 + _rhs.3
-//         )
-//     }
-// }
+    #[inline]
+    pub fn splat_z(self) -> Self {
+        unsafe { Self (_mm_shuffle_ps(self.0, self.0, 0b10_10_10_10)) }
+    }
 
-// impl ops::Add<f32> for Vector {
-//     type Output = Self;
+    #[inline]
+    pub fn splat_w(self) -> Self {
+        unsafe { Self (_mm_shuffle_ps(self.0, self.0, 0b11_11_11_11)) }
+    }
 
-//     #[inline]
-//     fn add(self, _rhs: f32) -> Self {
-//         Self (
-//             self.0 + _rhs,
-//             self.1 + _rhs,
-//             self.2 + _rhs,
-//             self.3 + _rhs
-//         )
-//     }
-// }
+    #[inline]
+    pub fn clamp(self, min: Vector, max: Vector) -> Self {
+        unsafe { 
+            let result = _mm_max_ps(self.0, min.0);
+            let result = _mm_min_ps(result, max.0);
 
-// impl ops::AddAssign<Vector> for Vector {
-//     #[inline]
-//     fn add_assign(&mut self, _rhs: Vector) {
-//         *self = Self (
-//             self.0 + _rhs.0,
-//             self.1 + _rhs.1,
-//             self.2 + _rhs.2,
-//             self.3 + _rhs.3
-//         );
-//     }
-// }
+            Self (result)
+         }
+    }
+}
+
+impl fmt::Display for Vector {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
+    }
+}
+
+impl ops::Add<Vector> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, _rhs: Self) -> Self {
+        unsafe {
+            Self (_mm_add_ps(self.0, _rhs.0))
+        }
+    }
+}
+
+impl ops::Add<f32> for Vector {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, _rhs: f32) -> Self {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            Self (_mm_add_ps(self.0, rhs))
+        }
+    }
+}
+
+impl ops::AddAssign<Vector> for Vector {
+    #[inline]
+    fn add_assign(&mut self, _rhs: Vector) {
+        unsafe {
+            *self = Self (_mm_add_ps(self.0, _rhs.0));
+        }
+    }
+}
 
 
-// impl ops::Sub<Vector> for Vector {
-//     type Output = Self;
+impl ops::Sub<Vector> for Vector {
+    type Output = Self;
 
-//     #[inline]
-//     fn sub(self, _rhs: Self) -> Self {
-//         Self (
-//             self.0 - _rhs.0,
-//             self.1 - _rhs.1,
-//             self.2 - _rhs.2,
-//             self.3 - _rhs.3
-//         )
-//     }
-// }
+    #[inline]
+    fn sub(self, _rhs: Self) -> Self {
+        unsafe {
+            Self (_mm_sub_ps(self.0, _rhs.0))
+        }
+    }
+}
 
-// impl ops::Sub<f32> for Vector {
-//     type Output = Self;
+impl ops::Sub<f32> for Vector {
+    type Output = Self;
 
-//     #[inline]
-//     fn sub(self, _rhs: f32) -> Self {
-//         Self (
-//             self.0 - _rhs,
-//             self.1 - _rhs,
-//             self.2 - _rhs,
-//             self.3 - _rhs
-//         )
-//     }
-// }
+    #[inline]
+    fn sub(self, _rhs: f32) -> Self {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            Self (_mm_sub_ps(self.0, rhs))
+        }
+    }
+}
 
-// impl ops::Mul<Vector> for Vector {
-//     type Output = Self;
+impl ops::Mul<Vector> for Vector {
+    type Output = Self;
 
-//     #[inline]
-//     fn mul(self, _rhs: Self) -> Self {
-//         Self (
-//             self.0 * _rhs.0,
-//             self.1 * _rhs.1,
-//             self.2 * _rhs.2,
-//             self.3 * _rhs.3
-//         )
-//     }
-// }
+    #[inline]
+    fn mul(self, _rhs: Self) -> Self {
+        unsafe {
+            Self (_mm_mul_ps(self.0, _rhs.0))
+        }
+    }
+}
 
-// impl ops::Mul<f32> for Vector {
-//     type Output = Self;
+impl ops::Mul<f32> for Vector {
+    type Output = Self;
 
-//     #[inline]
-//     fn mul(self, _rhs: f32) -> Self {
-//         Self (
-//             self.0 * _rhs,
-//             self.1 * _rhs,
-//             self.2 * _rhs,
-//             self.3 * _rhs
-//         )
-//     }
-// }
+    #[inline]
+    fn mul(self, _rhs: f32) -> Self {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            Self (_mm_mul_ps(self.0, rhs))
+        }
+    }
+}
 
-// impl ops::Mul<Matrix> for Vector {
-//     type Output = Self;
+impl ops::MulAssign<Vector> for Vector {
+    #[inline]
+    fn mul_assign(&mut self, _rhs: Vector) {
+        unsafe {
+            *self = Self (_mm_mul_ps(self.0, _rhs.0));
+        }
+    }
+}
 
-//     #[inline]
-//     fn mul(self, rhs: Matrix) -> Vector {
-//         let x = rhs.row_1.x() * self.x() + rhs.row_2.x() * self.y() + rhs.row_3.x() * self.z() + rhs.row_4.x() * 1.0;
-//         let y = rhs.row_1.y() * self.x() + rhs.row_2.y() * self.y() + rhs.row_3.y() * self.z() + rhs.row_4.y() * 1.0;
-//         let z = rhs.row_1.z() * self.x() + rhs.row_2.z() * self.y() + rhs.row_3.z() * self.z() + rhs.row_4.z() * 1.0;
+impl ops::MulAssign<f32> for Vector {
+    #[inline]
+    fn mul_assign(&mut self, _rhs: f32) {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            *self = Self (_mm_mul_ps(self.0, rhs));
+        }
+    }
+}
 
-//         Vector::vec3(x, y, z)
-//     }
-// }
+impl ops::Div<Vector> for Vector {
+    type Output = Self;
 
-// impl ops::MulAssign<Vector> for Vector {
-//     #[inline]
-//     fn mul_assign(&mut self, _rhs: Vector) {
-//         *self = Self (
-//             self.0 * _rhs.0,
-//             self.1 * _rhs.1,
-//             self.2 * _rhs.2,
-//             self.3 * _rhs.3
-//         );
-//     }
-// }
+    #[inline]
+    fn div(self, _rhs: Self) -> Self {
+        unsafe {
+            Self (_mm_div_ps(self.0, _rhs.0))
+        }
+    }
+}
 
-// impl ops::MulAssign<f32> for Vector {
-//     #[inline]
-//     fn mul_assign(&mut self, _rhs: f32) {
-//         *self = Self (
-//             self.0 * _rhs,
-//             self.1 * _rhs,
-//             self.2 * _rhs,
-//             self.3 * _rhs
-//         );
-//     }
-// }
+impl ops::Div<f32> for Vector {
+    type Output = Self;
 
-// impl ops::Div<Vector> for Vector {
-//     type Output = Self;
+    #[inline]
+    fn div(self, _rhs: f32) -> Self {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            Self (_mm_div_ps(self.0, rhs))
+        }
+    }
+}
 
-//     #[inline]
-//     fn div(self, _rhs: Self) -> Self {
-//         Self (
-//             self.0 / _rhs.0,
-//             self.1 / _rhs.1,
-//             self.2 / _rhs.2,
-//             self.3 / _rhs.3
-//         )
-//     }
-// }
+impl ops::DivAssign<f32> for Vector {
+    #[inline]
+    fn div_assign(&mut self, _rhs: f32) {
+        unsafe {
+            let rhs = _mm_set_ps1(_rhs);
+            *self = Self (_mm_div_ps(self.0, rhs));
+        }
+    }
+}
 
-// impl ops::Div<f32> for Vector {
-//     type Output = Self;
+impl ops::Mul<Matrix> for Vector {
+    type Output = Self;
 
-//     #[inline]
-//     fn div(self, _rhs: f32) -> Self {
-//         Self (
-//             self.0 / _rhs,
-//             self.1 / _rhs,
-//             self.2 / _rhs,
-//             self.3 / _rhs
-//         )
-//     }
-// }
+    #[inline]
+    fn mul(self, rhs: Matrix) -> Vector {
+        unsafe {
+            let vec_x = _mm_shuffle_ps(self.0, self.0, 0b00_00_00_00);
+            let vec_y = _mm_shuffle_ps(self.0, self.0, 0b01_01_01_01);
+            let vec_z = _mm_shuffle_ps(self.0, self.0, 0b10_10_10_10);
+            let vec_w = _mm_set_ps1(1.0);
 
-// impl ops::DivAssign<f32> for Vector {
-//     #[inline]
-//     fn div_assign(&mut self, _rhs: f32) {
-//         *self = Self (
-//             self.0 / _rhs,
-//             self.1 / _rhs,
-//             self.2 / _rhs,
-//             self.3 / _rhs
-//         );
-//     }
-// }
+            let mul_row_1 = _mm_mul_ps(rhs.row_1.0, vec_x);
+            let mul_row_2 = _mm_mul_ps(rhs.row_2.0, vec_y);
+            let mul_row_3 = _mm_mul_ps(rhs.row_3.0, vec_z);
+            let mul_row_4 = _mm_mul_ps(rhs.row_4.0, vec_w);
 
-// impl ops::Neg for Vector {
-//     type Output = Self;
+            let res_r1r2 = _mm_add_ps(mul_row_1, mul_row_2);
+            let res_r1r2r3 = _mm_add_ps(res_r1r2, mul_row_3);
+            let res_r1r2r3r4 = _mm_add_ps(res_r1r2r3, mul_row_4);
 
-//     #[inline]
-//     fn neg(self) -> Self {
-//         Self (
-//             -self.0,
-//             -self.1,
-//             -self.2,
-//             -self.3
-//         )
-//     }
-// }
+            Self (res_r1r2r3r4)
+            // let x = rhs.row_1.x() * self.x() + rhs.row_2.x() * self.y() + rhs.row_3.x() * self.z() + rhs.row_4.x() * 1.0;
+            // let y = rhs.row_1.y() * self.x() + rhs.row_2.y() * self.y() + rhs.row_3.y() * self.z() + rhs.row_4.y() * 1.0;
+            // let z = rhs.row_1.z() * self.x() + rhs.row_2.z() * self.y() + rhs.row_3.z() * self.z() + rhs.row_4.z() * 1.0;
+    
+            // Vector::vec3(x, y, z)
+        }
+    }
+}
 
-// impl From<(f32, f32, f32, f32)> for Vector {
-//     fn from(tuple: (f32, f32, f32, f32)) -> Self {
-//         Self (tuple.0, tuple.1, tuple.2, tuple.3)
-//     }
-// }
+impl ops::Neg for Vector {
+    type Output = Self;
 
-// impl From<Vector> for (f32, f32, f32, f32) {
-//     fn from(v: Vector) -> Self {
-//         (v.0, v.1, v.2, v.3)
-//     }
+    #[inline]
+    fn neg(self) -> Self {
+        unsafe {
+            let rhs = _mm_set_ps1(-1.0);
+            Self (_mm_mul_ps(self.0, rhs))
+        }
+    }
+}
+
+impl From<(f32, f32, f32, f32)> for Vector {
+    fn from(tuple: (f32, f32, f32, f32)) -> Self {
+        unsafe {
+            Self (_mm_set_ps(tuple.3, tuple.2, tuple.1, tuple.0))
+        }
+    }
+}
+
+impl From<Vector> for (f32, f32, f32, f32) {
+    fn from(v: Vector) -> Self {
+        (v.x(), v.y(), v.z(), v.w())
+    }
 }

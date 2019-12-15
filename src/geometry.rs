@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::vector::Vector;
+use crate::vector_simd::Vector;
 use std::{f32, fmt};
 use std::f32::consts;
 
@@ -260,11 +260,22 @@ impl BoundingBox {
         let sign_y = sign.y() as usize;
         let sign_z = sign.z() as usize;
 
-        let mut t_min = (self.bounds[sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
-        let mut t_max = (self.bounds[1 - sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+        // let mut t_min = (self.bounds[sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+        // let mut t_max = (self.bounds[1 - sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
 
-        let t_y_min = (self.bounds[sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
-        let t_y_max = (self.bounds[1 - sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+        // let t_y_min = (self.bounds[sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+        // let t_y_max = (self.bounds[1 - sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+        let vec_min = Vector::vec3(self.bounds[sign_x].x(), self.bounds[sign_y].y(), self.bounds[sign_z].z());
+        let vec_max = Vector::vec3(self.bounds[1- sign_x].x(), self.bounds[1- sign_y].y(), self.bounds[1- sign_z].z());
+
+        let min = (vec_min - ray_origin) * inv_ray_dir;
+        let max = (vec_max - ray_origin) * inv_ray_dir;
+
+        let mut t_min = min.x();
+        let mut t_max = max.x();
+        
+        let t_y_min = min.y();
+        let t_y_max = max.y();
 
         if (t_min > t_y_max) || (t_y_min > t_max) {
             return false;
@@ -278,8 +289,11 @@ impl BoundingBox {
             t_max = t_y_max;
         }
 
-        let t_z_min = (self.bounds[sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
-        let t_z_max = (self.bounds[1 - sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+        // let t_z_min = (self.bounds[sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+        // let t_z_max = (self.bounds[1 - sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+
+        let t_z_min = min.z();
+        let t_z_max = max.z();
 
         if (t_min > t_z_max) || (t_z_min > t_max) {
             return false;
@@ -340,13 +354,13 @@ impl BoundingSpehere {
     pub fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> bool {
         let L = self.position - ray_origin;
 
-        let tca = L.vec3_dot(ray_dir);
+        let tca = L.vec3_dot_f32(ray_dir);
 
         if tca < 0.0 {
             return false;
         }
 
-        let d2 = L.vec3_dot(L) - tca * tca;
+        let d2 = L.vec3_dot_f32(L) - tca * tca;
 
         if d2 > self.radius_sqrd {
             return false;            

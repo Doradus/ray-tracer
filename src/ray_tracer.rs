@@ -1,4 +1,4 @@
-use crate::vector::Vector;
+use crate::vector_simd::Vector;
 use crate::geometry::{Mesh, BoundingBox};
 use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
@@ -140,7 +140,7 @@ fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vec
     let v0v2  = v_2 - v_0;
 
     let p = ray_dir.vec3_cross(v0v2);
-    let det = v0v1.vec3_dot(p);
+    let det = v0v1.vec3_dot_f32(p);
 
     if det < f32::EPSILON {
         return None;
@@ -149,20 +149,20 @@ fn intersect_triangle(ray_origin: Vector, ray_dir: Vector, v_0: Vector, v_1: Vec
     let inv_det = 1.0 / det;
 
     let t_vec = ray_origin - v_0;
-    let u = t_vec.vec3_dot(p) * inv_det;
+    let u = t_vec.vec3_dot_f32(p) * inv_det;
 
     if u < 0.0 || u > 1.0 {
         return None;
     }
 
     let q_vec = t_vec.vec3_cross(v0v1);
-    let v = ray_dir.vec3_dot(q_vec) * inv_det;
+    let v = ray_dir.vec3_dot_f32(q_vec) * inv_det;
 
     if v < 0.0 || v + u > 1.0 {
         return None;
     }
 
-    let t = v0v2.vec3_dot(q_vec) * inv_det;
+    let t = v0v2.vec3_dot_f32(q_vec) * inv_det;
 
     if t < 0.0 {
         return None;
