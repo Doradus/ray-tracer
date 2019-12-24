@@ -7,6 +7,7 @@ mod ray_tracer;
 mod scene;
 mod math;
 mod test_scenes;
+mod bvh;
 
 use scene::*;
 use test_scenes::*;
@@ -92,12 +93,13 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 1, 3, 3, 8);
+    let settings = RenderSettings::new(1280, 720, 3, 1, 1, 4);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = gi_test();
+    let scene = spehres();
 
     let max_threads = num_cpus::get();
+    println!("threads: {}", max_threads);
 
     let y_divisions = (max_threads as f32).sqrt().floor();
     let x_divisions = (max_threads as f32) / y_divisions;
@@ -121,6 +123,7 @@ fn main() {
                 let mut stats = Stats {..Default::default()};
                 let i = thread_counter.fetch_add(1, Ordering::Relaxed);
                 render(thread_info[i], &buffer, settings, &scene, &mut stats);
+                println!("thread: {}, num triangle intersects: {}", i, stats.num_tringle_tests);
             });       
         };
     }).unwrap();

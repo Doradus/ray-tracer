@@ -9,6 +9,13 @@ use std::arch::x86_64::*;
 use std::{ops, fmt, mem};
 
 #[derive(Clone, Copy, Debug)]
+pub enum Axis {
+    X,
+    Y,
+    Z
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Vector (__m128);
 
 impl Vector {
@@ -112,6 +119,20 @@ impl Vector {
     #[inline]
     pub fn z (self) -> f32 {
         unsafe { _mm_cvtss_f32(_mm_shuffle_ps(self.0, self.0, 0b00_00_00_10)) }
+    }
+
+    pub fn get_by_axis(self, axis:Axis) -> f32 {
+        match axis {
+            Axis::X => {
+                return self.x();
+            },
+            Axis::Y => {
+                return self.y();
+            },
+            Axis::Z => {
+                return self.z();
+            }
+        }
     }
 
     #[inline]
@@ -370,5 +391,19 @@ impl From<(f32, f32, f32, f32)> for Vector {
 impl From<Vector> for (f32, f32, f32, f32) {
     fn from(v: Vector) -> Self {
         (v.x(), v.y(), v.z(), v.w())
+    }
+}
+
+impl From<Vector> for [f32; 4] {
+    fn from(v: Vector) -> Self {
+        [v.x(), v.y(), v.z(), v.w()]
+    }
+}
+
+impl From<[f32; 4]> for Vector {
+    fn from(array: [f32; 4]) -> Self {
+        unsafe {
+            Self (_mm_set_ps(array[3], array[2], array[1], array[0]))
+        }
     }
 }
