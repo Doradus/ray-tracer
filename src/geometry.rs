@@ -296,6 +296,14 @@ impl BoundingBox {
         self.bounds[1] - self.bounds[0]
     }
 
+    pub fn min(self) -> Vector {
+        self.bounds[0]
+    }
+
+    pub fn max(self) -> Vector {
+        self.bounds[1]
+    }
+
     pub fn extend_bounds(&mut self, pos: Vector) {
         if pos.x() < self.bounds[0].x() {self.bounds[0].set_x(pos.x())};
         if pos.y() < self.bounds[0].y() {self.bounds[0].set_y(pos.y())};
@@ -304,6 +312,30 @@ impl BoundingBox {
         if pos.x() > self.bounds[1].x() {self.bounds[1].set_x(pos.x())};
         if pos.y() > self.bounds[1].y() {self.bounds[1].set_y(pos.y())};
         if pos.z() > self.bounds[1].z() {self.bounds[1].set_z(pos.z())};
+    }
+
+    pub fn offset(self, point: Vector) -> Vector {
+        let mut offset = point - self.bounds[0];
+
+        if self.bounds[0].x() < self.bounds[1].x() {
+            offset.set_x(offset.x() / (self.bounds[1].x() - self.bounds[0].x()));
+        }
+
+        if self.bounds[0].y() < self.bounds[1].y() {
+            offset.set_y(offset.y() / (self.bounds[1].y() - self.bounds[0].y()));
+        }
+
+        if self.bounds[0].z() < self.bounds[1].z() {
+            offset.set_z(offset.z() / (self.bounds[1].z() - self.bounds[0].z()));
+        }
+        
+        offset
+    }
+
+    pub fn surface_area(self) -> f32 {
+        let d = self.diagonal();
+
+        2.0 * (d.x() * d.y() + d.x() * d.z() + d.y() * d.z())
     }
 
     pub fn intersect(&self, ray_origin: Vector, inv_ray_dir: Vector, sign: [i8; 3]) -> bool {

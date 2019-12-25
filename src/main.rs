@@ -15,12 +15,10 @@ use vector_simd::Vector;
 // use vector_simd::VectorSimd;
 use std::time::Instant;
 use ray_tracer::{RayType, cast_ray};
-use std::{f32::consts, fmt};
+use std::{f32, f32::consts, fmt};
 use image;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::UnsafeCell;
-use rand::Rng;
-
 
 
 pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
@@ -93,10 +91,10 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 3, 1, 1, 4);
+    let settings = RenderSettings::new(1280, 720, 3, 0, 0, 1);
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = spehres();
+    let scene = gi_test();
 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
@@ -116,6 +114,7 @@ fn main() {
     }
 
     let thread_counter = AtomicUsize::new(0);
+
     let now = Instant::now();
     crossbeam_utils::thread::scope(|s| {
         for _ in 0..max_threads {
@@ -128,12 +127,10 @@ fn main() {
         };
     }).unwrap();
 
-
-
     let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
-    write_to_file(&buffer);
+    println!("render time {}", end);
 
-    println!("{}", end);
+    write_to_file(&buffer);
 }
 
 fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {

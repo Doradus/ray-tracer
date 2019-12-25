@@ -8,7 +8,8 @@ use std::time::Instant;
 struct BVHInfo {
     primitive_number: usize,
     bounding_box: BoundingBox,
-    center: [f32; 4]
+    center: [f32; 4],
+    section: usize
 }
 
 impl BVHInfo {
@@ -18,7 +19,8 @@ impl BVHInfo {
         Self {
             primitive_number: primitive_number,
             bounding_box: bounding_box,
-            center: center.into()
+            center: center.into(),
+            section: 0
         }
     }
 }
@@ -81,6 +83,21 @@ impl LinearBVHNode {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+struct Section {
+    bounding_box: BoundingBox,
+    count: u32
+}
+
+impl Default for Section {
+    fn default() -> Section {
+        Section {
+            bounding_box: BoundingBox::new(),
+            count: 0
+        }
+    }
+}
+
 pub fn build_bvh(scene_objects: &[SceneObject]) -> (Vec<LinearBVHNode>, Vec<usize>) {
     println!("Construct BVH: ");
     let now = Instant::now();
@@ -91,6 +108,7 @@ pub fn build_bvh(scene_objects: &[SceneObject]) -> (Vec<LinearBVHNode>, Vec<usiz
         let bvh_info = BVHInfo::new(i, scene_objects[i].bounding_box);
         bvh_info_collection.push(bvh_info);
     }
+    
     let mut total_nodes = 0;
     let mut ordered_scene_object = Vec::new();
     let root = recursive_build_nodes(& mut bvh_info_collection, 0, scene_objects.len(), &mut total_nodes, scene_objects, & mut ordered_scene_object);
@@ -100,6 +118,7 @@ pub fn build_bvh(scene_objects: &[SceneObject]) -> (Vec<LinearBVHNode>, Vec<usiz
 
     let end = now.elapsed().as_secs() as f64 + now.elapsed().subsec_nanos() as f64 * 1e-9;
     println!("Created BVH in: {}", end);
+    println!("Nodes created: {}", nodes.len());
 
     (nodes, ordered_scene_object)
 }
@@ -133,7 +152,7 @@ fn recursive_build_nodes(bvh_info: & mut [BVHInfo], start: usize, end: usize, to
 
         let dim = center_bounds.maximum_extent();
 
-        let mid = (start + end) / 2;
+        let mut mid = (start + end) / 2;
 
         let min: [f32; 4] =  center_bounds.bounds[0].into();  
         let max: [f32; 4] =  center_bounds.bounds[1].into(); 
@@ -149,8 +168,84 @@ fn recursive_build_nodes(bvh_info: & mut [BVHInfo], start: usize, end: usize, to
             node = BVHBuildNode::leaf_node(first_offset, num_objects as u32, bounds);
             return node;
         } else {
-            //equal partitation
-            bvh_info[start..end].sort_unstable_by(|a, b| a.center[dim as usize].partial_cmp(&b.center[dim as usize]).unwrap());
+            if num_objects <= 4 {
+                //equal partitation
+                bvh_info[start..end].sort_unstable_by(|a, b| a.center[dim as usize].partial_cmp(&b.center[dim as usize]).unwrap());
+            } else {
+                //SAH
+                let num_sections = 12;
+                let mut sections = vec![Section {..Default::default()}; num_sections];
+
+                //divide in equal size sections
+                for i in start..end {
+                    let a: [f32; 4] = center_bounds.offset(bvh_info[i].center.into()).into();
+                    let mut b = num_sections * a[dim as usize] as usize;
+
+                    if b == num_sections {
+                        b = num_sections - 1;
+                    }
+
+                    bvh_info[i].section = b;
+                    sections[b].count += 1;
+                    sections[b].bounding_box = sections[b].bounding_box.union(bvh_info[i].bounding_box);
+                }
+
+                let mut cost = vec![0.0; num_sections - 1];
+
+                //estimate cost 
+                //TODO calculate cost based on object now it's 1
+                for i in 0..(num_sections - 1) {
+                    let mut b0 = BoundingBox::new();
+                    let mut b1 = BoundingBox::new();
+
+                    let mut count0 = 0;
+                    let mut count1 = 0;
+
+                    for j in 0..(i + 1) {
+                        b0 = b0.union(sections[j].bounding_box);
+                        count0 = sections[j].count;
+                    }
+
+                    for j in i..(num_sections - 1) {
+                        b1 = b1.union(sections[j].bounding_box);
+                        count1 = sections[j].count;
+                    }
+
+                    cost[i] = 0.0125 + (count0 as f32 * b0.surface_area() + count1 as f32 * b1.surface_area()) / bounds.surface_area();
+                }
+
+                //find cheapest split
+                let mut min_cost = cost[0];
+                let mut min_cost_split_at = 0;
+                for i in 1..(num_sections - 1) {
+                    if cost[i] < min_cost {
+                        min_cost = cost[i];
+                        min_cost_split_at = i;
+                    }
+                }
+
+                let leaf_cost = num_objects as f32; //TODO calculate cost based on object now its' 1
+
+                if num_objects > 225 || min_cost < leaf_cost {
+                    bvh_info[start..end].sort_unstable_by(|a, b| a.section.partial_cmp(&b.section).unwrap());
+
+                    for i in start..end {
+                        if bvh_info[i].section <= min_cost_split_at {
+                            mid = i;
+                        }
+                    }
+                } else {
+                    let first_offset = ordered_scene_object.len() as u32;
+
+                    for i in start..end {
+                        let object_index = bvh_info[i].primitive_number;
+                        ordered_scene_object.push(object_index);
+                    }
+
+                    node = BVHBuildNode::leaf_node(first_offset, num_objects as u32, bounds);
+                    return node;
+                }
+            }          
             
             node = BVHBuildNode::interior_node(
                     dim as i8,
