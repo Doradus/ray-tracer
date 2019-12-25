@@ -4,6 +4,7 @@ use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
 use crate::Stats;
 use crate::RenderSettings;
+use crate::bvh::LinearBVHNode;
 use std::f32;
 
 #[derive(PartialEq, Copy, Clone)]
@@ -15,8 +16,8 @@ pub enum RayType {
 } 
 
 pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
-    match trace(origin, direction, &scene.scene_objects, f32::INFINITY, current_ray_depth, settings, ray_type, stats) {
-        None => Vector::vec3(0.0, 0.0, 0.0),
+    match trace(origin, direction, &scene.scene_objects, &scene.bvh, &scene.object_indices, f32::INFINITY, current_ray_depth, settings, ray_type, stats) {
+        None => Vector::vec3(0.87, 0.92, 1.0),
         Some(i) => {
             let mesh = &scene.scene_objects[i.mesh_index].mesh;
             
@@ -46,7 +47,7 @@ pub struct TraceResult {
     t: f32
 }
 
-pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], near: f32, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Option<TraceResult> {
+pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], nodes: &[LinearBVHNode], indices: &[usize], near: f32, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Option<TraceResult> {
     let mut found:Option<TraceResult> = None;
     
     if current_ray_depth > settings.max_ray_depth {
@@ -57,32 +58,92 @@ pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], n
     let mut closest = near;
 
     let inv_dir = Vector::vec3(1.0 / direction.x(), 1.0 / direction.y(), 1.0 / direction.z());
-    let sign_x = if inv_dir.x() < 0.0 {1.0} else {0.0};
-    let sign_y = if inv_dir.y() < 0.0 {1.0} else {0.0};
-    let sign_z = if inv_dir.z() < 0.0 {1.0} else {0.0};
-    let sign = Vector::vec3(sign_x, sign_y, sign_z);
+    let sign_x = if inv_dir.x() < 0.0 {1} else {0};
+    let sign_y = if inv_dir.y() < 0.0 {1} else {0};
+    let sign_z = if inv_dir.z() < 0.0 {1} else {0};
+    let sign = [sign_x, sign_y, sign_z];
 
-    for i in 0..scene_objects.len() {
-        if scene_objects[i].bounding_box.intersect(origin, inv_dir, sign) {
-            match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
-                Some(mesh_result) => {
-                    if mesh_result.t < closest {
-                        closest = mesh_result.t;
+    let mut to_visit_offset = 0;
+    let mut current_node_index = 0;
+    let mut nodes_to_visit = [0; 64];
 
-                        let result = TraceResult {
-                            u: mesh_result.u,
-                            v: mesh_result.v,
-                            triangle_index: mesh_result.triangle_index,
-                            mesh_index: i,
-                            t: mesh_result.t
-                        };
-                        found = Some(result);
-                    }
-                },
-                None => ()
+    loop {
+        let node = nodes[current_node_index];
+
+        if node.bounding_box.intersect(origin, inv_dir, sign) {
+            //leaf nodes
+            if node.num_prim > 0 {
+                for i in 0..node.num_prim {
+                    let index = (node.prim_offset + i as i32) as usize;
+                    let mesh_index = indices[index];
+                    match intersect_mesh(origin, direction, &scene_objects[mesh_index].mesh, stats) {
+                        Some(mesh_result) => {
+                            if mesh_result.t < closest {
+                                closest = mesh_result.t;
+
+                                let result = TraceResult {
+                                    u: mesh_result.u,
+                                    v: mesh_result.v,
+                                    triangle_index: mesh_result.triangle_index,
+                                    mesh_index: mesh_index,
+                                    t: mesh_result.t
+                                };
+                                found = Some(result);
+                            }
+                        },
+                        None => ()
+                    }                 
+                }
+
+                if to_visit_offset == 0 {
+                    break;
+                } 
+    
+                to_visit_offset -= 1;
+                current_node_index = nodes_to_visit[to_visit_offset];
+
+            } else {
+                if sign[node.axis as usize] == 1 {
+                    nodes_to_visit[to_visit_offset] = current_node_index + 1;
+                    current_node_index = node.second_child_offset as usize;
+                } else {
+                    nodes_to_visit[to_visit_offset] = node.second_child_offset as usize;
+                    current_node_index = current_node_index + 1;
+                }
+
+                to_visit_offset += 1;
             }
+        } else {
+            if to_visit_offset == 0 {
+                break;
+            } 
+
+            to_visit_offset -= 1;
+            current_node_index = nodes_to_visit[to_visit_offset];
         }
     }
+
+    // for i in 0..scene_objects.len() {
+    //     if scene_objects[i].bounding_box.intersect(origin, inv_dir, sign) {
+    //         match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
+    //             Some(mesh_result) => {
+    //                 if mesh_result.t < closest {
+    //                     closest = mesh_result.t;
+
+    //                     let result = TraceResult {
+    //                         u: mesh_result.u,
+    //                         v: mesh_result.v,
+    //                         triangle_index: mesh_result.triangle_index,
+    //                         mesh_index: i,
+    //                         t: mesh_result.t
+    //                     };
+    //                     found = Some(result);
+    //                 }
+    //             },
+    //             None => ()
+    //         }
+    //     }
+    // }
 
     found
 }

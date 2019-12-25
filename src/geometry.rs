@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::vector_simd::Vector;
-use std::{f32, fmt};
+use crate::vector_simd::{Axis, Vector};
+use std::{f32, fmt, mem};
 use std::f32::consts;
 
 pub struct Vertex {
@@ -234,17 +234,76 @@ pub fn create_sphere(radius: f32, slices: u32, stacks: u32) -> Mesh {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct BoundingBox {
-    pub bounds:Vec<Vector>
+    pub bounds:[Vector; 2]
 }
 
 impl BoundingBox {
-    pub fn new(pos: Vector) -> Self {
+    pub fn new() -> Self {
         Self {
-            bounds: vec![Vector::vec3(pos.x(), pos.y(), pos.z()), Vector::vec3(pos.x(), pos.y(), pos.z())]
+            bounds: [Vector::vec3(f32::MAX, f32::MAX, f32::MAX), Vector::vec3(f32::MIN, f32::MIN, f32::MIN)]
+        }
+    }
+
+    pub fn union(self, other: BoundingBox) -> Self {
+        Self {
+            bounds: [
+                Vector::vec3(
+                    self.bounds[0].x().min(other.bounds[0].x()),
+                    self.bounds[0].y().min(other.bounds[0].y()),
+                    self.bounds[0].z().min(other.bounds[0].z())
+                ),
+                Vector::vec3(
+                    self.bounds[1].x().max(other.bounds[1].x()),
+                    self.bounds[1].y().max(other.bounds[1].y()),
+                    self.bounds[1].z().max(other.bounds[1].z())
+                )
+            ]
+        }
+    }
+
+    pub fn union_from_vector(self, other: Vector) -> Self {
+        Self {
+            bounds: [
+                Vector::vec3(
+                    self.bounds[0].x().min(other.x()),
+                    self.bounds[0].y().min(other.y()),
+                    self.bounds[0].z().min(other.z())
+                ),
+                Vector::vec3(
+                    self.bounds[1].x().max(other.x()),
+                    self.bounds[1].y().max(other.y()),
+                    self.bounds[1].z().max(other.z())
+                )
+            ]
         }
     }
     
+    pub fn maximum_extent(self)-> u8 {
+        let d = self.diagonal();
+
+        if d.x() > d.y() && d.x() > d.z() {
+            return 0;
+        } else if d.y() > d.z() {
+            return 1;
+        } else {
+            return 2;
+        }
+    }
+
+    pub fn diagonal(self) -> Vector {
+        self.bounds[1] - self.bounds[0]
+    }
+
+    pub fn min(self) -> Vector {
+        self.bounds[0]
+    }
+
+    pub fn max(self) -> Vector {
+        self.bounds[1]
+    }
+
     pub fn extend_bounds(&mut self, pos: Vector) {
         if pos.x() < self.bounds[0].x() {self.bounds[0].set_x(pos.x())};
         if pos.y() < self.bounds[0].y() {self.bounds[0].set_y(pos.y())};
@@ -255,25 +314,41 @@ impl BoundingBox {
         if pos.z() > self.bounds[1].z() {self.bounds[1].set_z(pos.z())};
     }
 
-    pub fn intersect(&self, ray_origin: Vector, inv_ray_dir: Vector, sign: Vector) -> bool {
-        let sign_x = sign.x() as usize;
-        let sign_y = sign.y() as usize;
-        let sign_z = sign.z() as usize;
+    pub fn offset(self, point: Vector) -> Vector {
+        let mut offset = point - self.bounds[0];
 
-        // let mut t_min = (self.bounds[sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
-        // let mut t_max = (self.bounds[1 - sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+        if self.bounds[0].x() < self.bounds[1].x() {
+            offset.set_x(offset.x() / (self.bounds[1].x() - self.bounds[0].x()));
+        }
 
-        // let t_y_min = (self.bounds[sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
-        // let t_y_max = (self.bounds[1 - sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
-        let vec_min = Vector::vec3(self.bounds[sign_x].x(), self.bounds[sign_y].y(), self.bounds[sign_z].z());
-        let vec_max = Vector::vec3(self.bounds[1- sign_x].x(), self.bounds[1- sign_y].y(), self.bounds[1- sign_z].z());
+        if self.bounds[0].y() < self.bounds[1].y() {
+            offset.set_y(offset.y() / (self.bounds[1].y() - self.bounds[0].y()));
+        }
 
-        let min = (vec_min - ray_origin) * inv_ray_dir;
-        let max = (vec_max - ray_origin) * inv_ray_dir;
+        if self.bounds[0].z() < self.bounds[1].z() {
+            offset.set_z(offset.z() / (self.bounds[1].z() - self.bounds[0].z()));
+        }
+        
+        offset
+    }
+
+    pub fn surface_area(self) -> f32 {
+        let d = self.diagonal();
+
+        2.0 * (d.x() * d.y() + d.x() * d.z() + d.y() * d.z())
+    }
+
+    pub fn intersect(&self, ray_origin: Vector, inv_ray_dir: Vector, sign: [i8; 3]) -> bool {
+        let sign_x = sign[0] as usize;
+        let sign_y = sign[1] as usize;
+        let sign_z = sign[2] as usize;
+
+        let min = (Vector::vec3(self.bounds[sign_x].x(), self.bounds[sign_y].y(), self.bounds[sign_z].z()) - ray_origin) * inv_ray_dir;
+        let max = (Vector::vec3(self.bounds[1 - sign_x].x(), self.bounds[1 - sign_y].y(), self.bounds[1 - sign_z].z()) - ray_origin) * inv_ray_dir;
 
         let mut t_min = min.x();
         let mut t_max = max.x();
-        
+
         let t_y_min = min.y();
         let t_y_max = max.y();
 
@@ -289,15 +364,40 @@ impl BoundingBox {
             t_max = t_y_max;
         }
 
-        // let t_z_min = (self.bounds[sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
-        // let t_z_max = (self.bounds[1 - sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
-
         let t_z_min = min.z();
         let t_z_max = max.z();
+
 
         if (t_min > t_z_max) || (t_z_min > t_max) {
             return false;
         }
+
+
+        // let mut t_min = (self.bounds[sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+        // let mut t_max = (self.bounds[1 - sign_x].x() - ray_origin.x()) * inv_ray_dir.x();
+
+        // let t_y_min = (self.bounds[sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+        // let t_y_max = (self.bounds[1 - sign_y].y() - ray_origin.y()) * inv_ray_dir.y();
+
+        // if (t_min > t_y_max) || (t_y_min > t_max) {
+        //     return false;
+        // }
+
+        // if t_y_min > t_min {
+        //     t_min = t_y_min;
+        // }
+
+        // if t_y_max < t_max {
+        //     t_max = t_y_max;
+        // }
+
+        // let t_z_min = (self.bounds[sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+        // let t_z_max = (self.bounds[1 - sign_z].z() - ray_origin.z()) * inv_ray_dir.z();
+
+
+        // if (t_min > t_z_max) || (t_z_min > t_max) {
+        //     return false;
+        // }
 
         true
     }

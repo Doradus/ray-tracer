@@ -1,8 +1,11 @@
 use crate::geometry::{Mesh, BoundingBox};
 use crate::shading::{Material, Lights};
+use crate::bvh::LinearBVHNode;
 
 
 pub struct SceneData {
+    pub bvh: Vec<LinearBVHNode>,
+    pub object_indices: Vec<usize>,
     pub scene_objects: Vec<SceneObject>,
     pub lights: Vec<Lights>
 }
