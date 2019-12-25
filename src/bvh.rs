@@ -185,8 +185,9 @@ fn recursive_build_nodes(bvh_info: & mut [BVHInfo], start: usize, end: usize, to
                         b = num_sections - 1;
                     }
 
+                    // println!("num tris: {}", scene_objects[bvh_info[i].primitive_number].mesh.num_tris);
                     bvh_info[i].section = b;
-                    sections[b].count += 1;
+                    sections[b].count += scene_objects[bvh_info[i].primitive_number].mesh.num_tris;
                     sections[b].bounding_box = sections[b].bounding_box.union(bvh_info[i].bounding_box);
                 }
 
@@ -211,7 +212,7 @@ fn recursive_build_nodes(bvh_info: & mut [BVHInfo], start: usize, end: usize, to
                         count1 = sections[j].count;
                     }
 
-                    cost[i] = 0.0125 + (count0 as f32 * b0.surface_area() + count1 as f32 * b1.surface_area()) / bounds.surface_area();
+                    cost[i] = 0.125 + (count0 as f32 * b0.surface_area() + count1 as f32 * b1.surface_area()) / bounds.surface_area();
                 }
 
                 //find cheapest split
@@ -224,10 +225,14 @@ fn recursive_build_nodes(bvh_info: & mut [BVHInfo], start: usize, end: usize, to
                     }
                 }
 
-                let leaf_cost = num_objects as f32; //TODO calculate cost based on object now its' 1
+                let mut leaf_cost = 0;
 
-                if num_objects > 225 || min_cost < leaf_cost {
-                    bvh_info[start..end].sort_unstable_by(|a, b| a.section.partial_cmp(&b.section).unwrap());
+                for i in start..end {
+                    leaf_cost += scene_objects[i].mesh.num_tris;
+                }
+
+                if num_objects > 225 || min_cost < leaf_cost as f32 {
+                    bvh_info[start..end].sort_unstable_by(|a, b| a.section.cmp(&b.section));
 
                     for i in start..end {
                         if bvh_info[i].section <= min_cost_split_at {
