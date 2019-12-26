@@ -15,7 +15,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere1 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.1, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(-1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -23,7 +23,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere2 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.2, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(-1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -31,7 +31,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere3 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.3, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.3, 1.0, 0.0, 0.0),
         Vector::vec3(-0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -39,7 +39,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere4 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.4, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(-0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -47,7 +47,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere5 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.5, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.5, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -55,7 +55,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere6 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.6, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.6, 1.0, 0.0, 0.0),
         Vector::vec3(0.4, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -63,7 +63,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere7 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.7, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.7, 1.0, 0.0, 0.0),
         Vector::vec3(0.8, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -71,7 +71,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere8 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.8, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.8, 1.0, 0.0, 0.0),
         Vector::vec3(1.2, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -79,7 +79,7 @@ pub fn multi_spheres() -> SceneData {
 
     let sphere9 = create_scene_object(
         create_sphere(0.15, 40, 20),
-        Material::new(diffuse, specular, 0.9, 1.0, 0.0),
+        Material::new(diffuse, specular, 0.9, 1.0, 0.0, 0.0),
         Vector::vec3(1.6, -0.35, -3.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -87,7 +87,7 @@ pub fn multi_spheres() -> SceneData {
    
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -118,7 +118,7 @@ pub fn multi_spheres() -> SceneData {
 pub fn transmission_test() -> SceneData {
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.1, -2.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -126,7 +126,7 @@ pub fn transmission_test() -> SceneData {
 
     let cube = create_scene_object(
         create_box(1.0, 1.0 , 1.0),
-        Material::new(Vector::vec3(0.3, 0.3, 0.7), Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0, 0.0),
+        Material::new(Vector::vec3(0.3, 0.3, 0.7), Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0, 0.0, 0.0),
         Vector::vec3(0.75, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0 * consts::PI / 180.0, 45.0 * consts::PI / 180.0, 0.0)
@@ -134,7 +134,7 @@ pub fn transmission_test() -> SceneData {
 
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -162,7 +162,7 @@ pub fn transmission_test() -> SceneData {
 pub fn area_ligt() -> SceneData {
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(-0.3, -0.1, -2.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -170,7 +170,7 @@ pub fn area_ligt() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0, 0.0),
         Vector::vec3(0.3, -0.1, -2.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -178,7 +178,7 @@ pub fn area_ligt() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -186,7 +186,7 @@ pub fn area_ligt() -> SceneData {
 
     let wall_plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0),
+        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, -8.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
@@ -217,7 +217,7 @@ pub fn area_ligt() -> SceneData {
 pub fn furnance_test() -> SceneData {
     let sphere = create_scene_object(
         create_sphere(1.0, 40, 20),
-        Material::new(Vector::vec3(0.18, 0.18, 0.18), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0),
+        Material::new(Vector::vec3(0.18, 0.18, 0.18), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -246,30 +246,33 @@ pub fn spehres() -> SceneData {
     let spec = Vector::vec3(0.04, 0.04, 0.04);
     let white = Vector::vec3(0.8, 0.8, 0.8);
     let black = Vector::vec3(0.0, 0.0, 0.0);
-    let red = Vector::vec3(0.82, 0.7, 0.7);
+    let red = Vector::vec3(0.82, 0.6, 0.6);
     let green = Vector::vec3(0.7, 0.82, 0.69);
-    let grey = Vector::vec3(0.67, 0.67, 0.67);
+    let brown = Vector::vec3(0.46, 0.40, 0.25);
     let orange = Vector::vec3(0.83, 0.53, 0.33);
     let blue = Vector::vec3(0.30, 0.55, 0.68);
+    let purple = Vector::vec3(0.51, 0.13, 0.68);
 
-    let colors = vec![red, green, orange, white, blue];
+
+    let colors = vec![red, green, orange, white, blue, purple];
+    let roughness = vec![1.0, 0.65, 0.4, 0.6, 0.7, 0.5, 0.7, 0.35, 0.8, 0.37];
 
     let chrome_spec = Vector::vec3(0.549, 0.556, 0.554);
+    let silver_spec = Vector::vec3(0.972, 0.960, 0.915);
     let gold_spec = Vector::vec3(1.0, 0.782, 0.344);
 
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(grey, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(brown, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
-
     let large_sphere1 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(black, gold_spec, 0.2, 1.0, 0.0),
+        Material::new(black, gold_spec, 0.35, 1.0, 0.0, 1.0),
         Vector::vec3(1.0, -0.3, -2.0),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -277,7 +280,7 @@ pub fn spehres() -> SceneData {
 
     let large_sphere2 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(black, chrome_spec, 0.1, 1.0, 0.0),
+        Material::new(black, silver_spec, 0.3, 1.0, 0.0, 1.0),
         Vector::vec3(-1.2, -0.3, -2.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -285,7 +288,7 @@ pub fn spehres() -> SceneData {
 
     let large_sphere3 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(black, chrome_spec, 0.6, 1.0, 0.0),
+        Material::new(Vector::vec3(0.4, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.25, 1.0, 0.0, 0.0),
         Vector::vec3(-1.0, -0.3, -3.0),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -298,12 +301,12 @@ pub fn spehres() -> SceneData {
         let x = (i / 5) as f32 * 0.4;
         let z = (i % 4) as f32 * 0.5;
 
-        let color_index = rand::thread_rng().gen_range(0.0, 5.0) as usize;
+        // let color_index = rand::thread_rng().gen_range(0.0, 5.0) as usize;
 
 
         let sphere = create_scene_object(
             create_sphere(0.2, 20, 20),
-            Material::new(colors[color_index], spec, 0.2, 1.0, 0.0),
+            Material::new(colors[i % 5], spec, roughness[i % 9], 1.0, 0.0, 0.0),
             Vector::vec3(x - 0.6, -0.4, z -3.0),
             Vector::vec3(0.5, 0.5, 0.5),
             Vector::vec3(0.0, 0.0, 0.0)
@@ -334,13 +337,16 @@ pub fn spehres() -> SceneData {
 pub fn gi_test() -> SceneData {
     let white = Vector::vec3(0.8, 0.8, 0.8);
     let black = Vector::vec3(0.0, 0.0, 0.0);
-    let red = Vector::vec3(0.6, 0.1, 0.1);
-    let green = Vector::vec3(0.1, 0.6, 0.1);
-
+    let red = Vector::vec3(0.6, 0.3, 0.3);
+    let green = Vector::vec3(0.3, 0.6, 0.3);
+    
+    let silver_spec = Vector::vec3(0.972, 0.960, 0.915);
+    let aluminum_spec = Vector::vec3(0.913, 0.922, 0.924);
     let chrome_spec = Vector::vec3(0.549, 0.556, 0.554);
+
     let cube_green = create_scene_object(
         create_box(0.8, 1.0 , 1.0),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0, 0.0, 0.0),
         Vector::vec3(-0.5, 0.0, -3.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, degree_to_radians(30.0), 0.0)
@@ -348,7 +354,7 @@ pub fn gi_test() -> SceneData {
 
     let cube_red = create_scene_object(
         create_box(0.7, 0.7 , 0.7),
-        Material::new(black, chrome_spec, 0.2, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.7, 1.0, 0.0, 0.0),
         Vector::vec3(0.5, -0.21, -2.5),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, degree_to_radians(155.0), 0.0)
@@ -356,7 +362,7 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(black, chrome_spec, 0.2, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
         Vector::vec3(-1.2, -0.3, -2.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -364,7 +370,7 @@ pub fn gi_test() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(black, aluminum_spec, 0.45, 1.0, 0.0, 1.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -372,7 +378,7 @@ pub fn gi_test() -> SceneData {
 
     let top_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 1.6, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(180.0), 0.0, 0.0)
@@ -380,7 +386,7 @@ pub fn gi_test() -> SceneData {
 
     let left_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(red, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(red, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(-1.7, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(90.0), 0.0)
@@ -388,7 +394,7 @@ pub fn gi_test() -> SceneData {
 
     let right_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(green, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0),
+        Material::new(green, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(1.7, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(270.0), 0.0)
@@ -396,7 +402,7 @@ pub fn gi_test() -> SceneData {
 
     let wall_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, -6.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
@@ -404,7 +410,7 @@ pub fn gi_test() -> SceneData {
 
     let back_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0),
+        Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, 1.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(180.0), 0.0)

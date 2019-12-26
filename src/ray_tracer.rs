@@ -17,7 +17,7 @@ pub enum RayType {
 
 pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> Vector {
     match trace(origin, direction, &scene.scene_objects, &scene.bvh, &scene.object_indices, f32::INFINITY, current_ray_depth, settings, ray_type, stats) {
-        None => Vector::vec3(0.87, 0.92, 1.0),
+        None => settings.background_color,
         Some(i) => {
             let mesh = &scene.scene_objects[i.mesh_index].mesh;
             

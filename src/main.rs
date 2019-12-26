@@ -48,12 +48,13 @@ pub struct RenderSettings {
     pub max_ray_depth: u32,
     pub diffuse_samples: u32,
     pub specular_samples: u32,
-    pub aa_samples: u32
+    pub aa_samples: u32,
+    pub background_color: Vector
 }
 
 impl RenderSettings {
-    fn new(width: u32, height: u32, ray_depth: u32, diffuse_samples: u32, specular_samples: u32, aa_samples: u32) -> Self {
-        Self {width: width, height: height, max_ray_depth: ray_depth, diffuse_samples: diffuse_samples, specular_samples: specular_samples, aa_samples: aa_samples}
+    fn new(width: u32, height: u32, ray_depth: u32, diffuse_samples: u32, specular_samples: u32, aa_samples: u32, background_color: Vector) -> Self {
+        Self {width: width, height: height, max_ray_depth: ray_depth, diffuse_samples: diffuse_samples, specular_samples: specular_samples, aa_samples: aa_samples, background_color: background_color}
     }
 }
 
@@ -91,10 +92,10 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 3, 1, 0, 10);
+    let settings = RenderSettings::new(1280, 720, 3, 0, 1, 15, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = spehres();
+    let scene = gi_test();
 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);

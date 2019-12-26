@@ -58,17 +58,19 @@ pub struct Material {
     pub specular: Vector,
     pub roughness: f32,
     pub ior: f32,
-    pub transmission: f32
+    pub transmission: f32,
+    pub metalicness: f32
 }
 
 impl Material {
-    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32, transmission: f32) -> Self {
+    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32, transmission: f32, metalicness: f32) -> Self {
         Self {
             albedo: albedo,
             specular: specular,
             roughness: roughness,
             ior: ior,
-            transmission: transmission
+            transmission: transmission, 
+            metalicness: metalicness
         }
     }
 }
@@ -151,14 +153,14 @@ fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
 
 #[inline]
 fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
-    spec_color + (spec_color - 1.0) * (1.0 - l_dot_h).powi(5)
+    spec_color + (Vector::vec3(1.0, 1.0, 1.0) - spec_color) * (1.0 - l_dot_h).powf(5.0)
 }
 
 fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, brightness: f32, light_color: Vector, diffuse: &mut Vector, specular: &mut Vector) {
     let a2 = roughness * roughness;
 
     let h =  (v + l).vec3_normalize();
-    let n_o_v = n.vec3_dot_f32(v).abs() + 1e-5;
+    let n_o_v = n.vec3_dot_f32(v).abs();
     let l_o_h = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
     let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
     let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
@@ -224,7 +226,7 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
 
             let pdf = sample.1;
 
-            let n_o_v = n.vec3_dot_f32(V).abs()  + 1e-5;
+            let n_o_v = n.vec3_dot_f32(V).abs();
             let n_o_l = clamp(n.vec3_dot_f32(L), 0.0, 1.0);
 
             if n_o_v == 0.0 || n_o_l == 0.0 {
@@ -233,17 +235,17 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
 
             let light_color = cast_ray(data.position + L * 0.0001, L, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats) / pdf;
 
-            // let l_o_h = clamp(L.vec3_dot_f32(H), 0.0, 1.0);
-            let v_o_h = clamp(V.vec3_dot_f32(H), 0.0, 1.0);
+            let l_o_h = clamp(L.vec3_dot_f32(H), 0.0, 1.0);
+            // let v_o_h = clamp(V.vec3_dot_f32(H), 0.0, 1.0);
 
             let n_o_h = clamp(n.vec3_dot_f32(H), 0.0, 1.0);
 
-            let F = schlick_fresnel_aprx(v_o_h, data.material.specular);
+            let F = schlick_fresnel_aprx(l_o_h, data.material.specular);
             let D = ggx_distribution(n_o_h, a2);
             let G = smith_for_ggx(n_o_l, n_o_v, a2);
-            let brdf = F * D * G * light_color * n_o_l;
+            let res = F * D * G * light_color * n_o_l;
 
-            *specular += brdf;
+            *specular += res;
         }
     
         *specular /= samples as f32;
@@ -251,7 +253,7 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
 }
 
 fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, tbn: &Matrix, diffuse: & mut Vector, stats: & mut Stats) {
-    if settings.diffuse_samples > 0 {
+    if settings.diffuse_samples > 0 && data.material.metalicness < 1.0 {
         let mut samples = settings.diffuse_samples;
         let n = data.normal;
 
