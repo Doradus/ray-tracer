@@ -484,4 +484,28 @@ impl BoundingSpehere {
     }
 }
 
+pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal: Vector, width: f32, height: f32, hit_at: &mut Vector) -> bool {
+    
+    let denom = ray_dir.vec3_dot_f32(normal);
+
+    if denom > 1e-6 {
+        let dist = pos - ray_origin;
+        let t = dist.vec3_dot_f32(normal) / denom;
+
+        if t > 0.0 { 
+            let hit = ray_origin + ray_dir * t;
+            let diff = hit - pos; 
+
+            if diff.x() < pos.x() + width * 0.5 && diff.x() > pos.x() - width * 0.5 && diff.y() < pos.y() + height * 0.5 && diff.y() > pos.y() - height * 0.5 {
+                *hit_at = hit;
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    false
+}
+
 

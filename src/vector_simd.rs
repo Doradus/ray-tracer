@@ -328,6 +328,18 @@ impl ops::Div<f32> for Vector {
     }
 }
 
+impl ops::Div<Vector> for f32 {
+    type Output = Vector;
+
+    #[inline]
+    fn div(self, _rhs: Vector) -> Vector {
+        unsafe {
+            let lhs = _mm_set_ps1(self);
+            Vector (_mm_div_ps(lhs, _rhs.0))
+        }
+    }
+}
+
 impl ops::DivAssign<f32> for Vector {
     #[inline]
     fn div_assign(&mut self, _rhs: f32) {

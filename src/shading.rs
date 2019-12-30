@@ -9,28 +9,45 @@ use std::f32::consts;
 use crate::math::*;
 use rand::Rng;
 
+pub struct LightColorInfo {
+    pub brightness: f32,
+    pub color: Vector,
+}
+
+pub struct LightDistanceInfo {
+    pub range: f32,
+    pub attenuation: Vector
+}
+
 pub struct DirectionalLight {
     pub direction: Vector,
-    pub brightness: f32,
-    pub color: Vector
+    pub color_info: LightColorInfo
 } 
 
 pub struct PointLight {
     pub position: Vector,
-    pub brightness: f32,
-    pub color: Vector,
-    pub range: f32,
-    // pub radius: f32,
-    // pub samples: f32,
-    pub attenuation: Vector
+    pub color_info: LightColorInfo,
+    pub distance_info: LightDistanceInfo
+}
+
+pub struct RectangularLight {
+    pub position: Vector,
+    pub direction: Vector,
+    pub width: f32,
+    pub height: f32,
+    pub samples: u32,
+    pub color_info: LightColorInfo,
+    pub distance_info: LightDistanceInfo
 }
 
 impl DirectionalLight {
     pub fn new(dir: Vector, brightness: f32, color: Vector) -> Self {
         Self {
             direction: dir,
-            brightness: brightness,
-            color: color
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color
+            }
         }
     } 
 }
@@ -39,17 +56,42 @@ impl PointLight {
     pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
         Self {
             position: pos,
-            brightness: brightness,
-            color: color,
-            range: range,
-            attenuation: attenuation
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color
+            },
+            distance_info: LightDistanceInfo {
+                range: range,
+                attenuation: attenuation
+            }
+        }
+    }
+}
+
+impl RectangularLight {
+    pub fn new(pos: Vector, dir: Vector, width: f32, height: f32, samples: u32, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
+        Self {
+            position: pos,
+            direction: dir,
+            width: width,
+            height: height, 
+            samples: samples,
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color
+            },
+            distance_info: LightDistanceInfo {
+                range: range,
+                attenuation: attenuation
+            }
         }
     }
 }
 
 pub enum Lights {
     Directional(DirectionalLight),
-    Point(PointLight)
+    Point(PointLight),
+    Rectangular(RectangularLight)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -108,7 +150,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         let v = -dir;
                         let n = data.normal;
 
-                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, 1.0, light.brightness, light.color, &mut diffuse, &mut specular);
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, 1.0, light.color_info.brightness, light.color_info.color, &mut diffuse, &mut specular);
                     },
                     _ => ()
                 }
@@ -123,9 +165,20 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         let n = data.normal;
 
                         let falloff = 4.0 * consts::PI * distance * distance;
-                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.brightness, light.color, &mut diffuse, &mut specular);
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.color_info.brightness, light.color_info.color, &mut diffuse, &mut specular);
                     },
                     _ => ()
+                }
+            }
+            Lights::Rectangular(light) => {
+                let mut rec_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+                let mut rec_spec = Vector::vec3(0.0, 0.0, 0.0);
+
+                for _ in 0..light.samples {
+                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+
+                    
                 }
             }
         }

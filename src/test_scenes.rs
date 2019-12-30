@@ -161,24 +161,16 @@ pub fn transmission_test() -> SceneData {
 
 pub fn area_ligt() -> SceneData {
     let sphere = create_scene_object(
-        create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
-        Vector::vec3(-0.3, -0.1, -2.5),
-        Vector::vec3(1.0, 1.0, 1.0),
-        Vector::vec3(0.0, 0.0, 0.0)
-    );
-
-    let sphere = create_scene_object(
-        create_sphere(0.4, 40, 20),
-        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0, 0.0),
-        Vector::vec3(0.3, -0.1, -2.5),
-        Vector::vec3(1.0, 1.0, 1.0),
+        create_sphere(0.4, 20, 20),
+        Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.35, 1.0, 0.0, 0.0),
+        Vector::vec3(0.0, -0.3, -2.5),
+        Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -186,7 +178,7 @@ pub fn area_ligt() -> SceneData {
 
     let wall_plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        Material::new(Vector::vec3(0.3, 0.3, 0.3), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
+        Material::new(Vector::vec3(0.6, 0.6, 0.6), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, -8.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
@@ -197,7 +189,7 @@ pub fn area_ligt() -> SceneData {
     // let point_light = Lights::Point(PointLight::new(Vector::vec3(0.3, 1.0, -1.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
     // let lights = vec![point_light];
 
-    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -0.8), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -0.8), 1.5, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![directional_light];
 
     let bvh_res = build_bvh(&scene_objects);
