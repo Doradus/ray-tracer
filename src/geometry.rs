@@ -493,15 +493,15 @@ pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal:
         let t = dist.vec3_dot_f32(normal) / denom;
 
         if t > 0.0 { 
-            let hit = ray_origin + ray_dir * t;
-            let diff = hit - pos; 
+            // let hit = ray_origin + ray_dir * t;
+            // let diff = hit - pos; 
+            return true;
 
-            if diff.x() < pos.x() + width * 0.5 && diff.x() > pos.x() - width * 0.5 && diff.y() < pos.y() + height * 0.5 && diff.y() > pos.y() - height * 0.5 {
-                *hit_at = hit;
-                return true;
-            } else {
-                return false;
-            }
+            // if diff.x() < pos.x() + width * 0.5 && diff.x() > pos.x() - width * 0.5 && diff.y() < pos.y() + height * 0.5 && diff.y() > pos.y() - height * 0.5 {
+            //     *hit_at = hit;
+            // } else {
+            //     return false;
+            // }
         }
     }
 
