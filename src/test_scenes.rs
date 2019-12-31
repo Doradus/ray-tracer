@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 use crate::matrix::Matrix;
 use crate::geometry::*;
 use crate::shading::*;
@@ -7,7 +10,6 @@ use crate::math::*;
 use crate::bvh::*;
 use std::f32::consts;
 use std::time::Instant;
-use rand::Rng;
 
 pub fn multi_spheres() -> SceneData {
     let diffuse = Vector::vec3(0.01, 0.01, 0.01);
@@ -96,9 +98,6 @@ pub fn multi_spheres() -> SceneData {
     let scene_objects = vec![sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7, sphere8, sphere9, plane];
 
     let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let point_light_1 = Lights::Point(PointLight::new(Vector::vec3(-1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
-    let point_light_2 = Lights::Point(PointLight::new(Vector::vec3(0.0, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
-    let point_light_3 = Lights::Point(PointLight::new(Vector::vec3(1.3, 1.0, -2.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
     let lights = vec![directional_light];
 
     let bvh_res = build_bvh(&scene_objects);

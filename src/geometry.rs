@@ -1,8 +1,19 @@
 #![allow(dead_code)]
 
-use crate::vector_simd::{Axis, Vector};
-use std::{f32, fmt, mem};
+use crate::vector_simd::{Vector};
+use std::{f32, fmt};
 use std::f32::consts;
+
+pub struct Rectangle {
+    pub width: f32,
+    pub height: f32
+}
+
+impl Rectangle {
+    pub fn area(&self) -> f32 {
+        self.width * self.height
+    }
+}
 
 pub struct Vertex {
     pub pos: Vector,
@@ -452,15 +463,15 @@ impl BoundingSpehere {
     }
 
     pub fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> bool {
-        let L = self.position - ray_origin;
+        let l = self.position - ray_origin;
 
-        let tca = L.vec3_dot_f32(ray_dir);
+        let tca = l.vec3_dot_f32(ray_dir);
 
         if tca < 0.0 {
             return false;
         }
 
-        let d2 = L.vec3_dot_f32(L) - tca * tca;
+        let d2 = l.vec3_dot_f32(l) - tca * tca;
 
         if d2 > self.radius_sqrd {
             return false;            

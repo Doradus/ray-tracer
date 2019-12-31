@@ -6,7 +6,7 @@ use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use std::{ops, fmt, mem};
+use std::{ops, fmt};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Axis {
