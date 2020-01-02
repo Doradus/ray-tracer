@@ -1,55 +1,133 @@
+#![allow(dead_code)]
+
 use crate::Vector;
 use crate::ray_tracer::*;
 use crate::scene::*;
 use crate::Stats;
 use crate::RenderSettings;
 use crate::matrix::Matrix;
+use crate::geometry::*;
 use std::f32;
 use std::f32::consts;
 use crate::math::*;
 use rand::Rng;
 
+pub struct LightColorInfo {
+    pub brightness: f32,
+    pub color: Vector,
+    pub exposure: i32
+}
+
+impl LightColorInfo {
+    pub fn intensity(&self) -> Vector {
+        let exp = if self.exposure < 1 {1.0} else {(2.0 as f32).powi(self.exposure)};
+
+        self.color * self.brightness * exp        
+    }
+}
+
+pub struct LightDistanceInfo {
+    pub range: f32,
+    pub attenuation: Vector
+}
+
 pub struct DirectionalLight {
     pub direction: Vector,
-    pub brightness: f32,
-    pub color: Vector
+    pub color_info: LightColorInfo
 } 
 
 pub struct PointLight {
     pub position: Vector,
-    pub brightness: f32,
-    pub color: Vector,
-    pub range: f32,
-    // pub radius: f32,
-    // pub samples: f32,
-    pub attenuation: Vector
+    pub color_info: LightColorInfo,
+    pub distance_info: LightDistanceInfo
+}
+
+pub struct RectangularLight {
+    pub position: Vector,
+    pub direction: Vector,
+    pub rec: Rectangle,
+    pub samples: u32,
+    pub color_info: LightColorInfo,
+    pub distance_info: LightDistanceInfo,
+    pub world: Matrix
 }
 
 impl DirectionalLight {
     pub fn new(dir: Vector, brightness: f32, color: Vector) -> Self {
         Self {
             direction: dir,
-            brightness: brightness,
-            color: color
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color,
+                exposure: 0
+            }
         }
     } 
+
+    pub fn intensity(&self) -> Vector {
+        self.color_info.intensity()
+    }
 }
 
 impl PointLight {
     pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
         Self {
             position: pos,
-            brightness: brightness,
-            color: color,
-            range: range,
-            attenuation: attenuation
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color,
+                exposure: 0
+            },
+            distance_info: LightDistanceInfo {
+                range: range,
+                attenuation: attenuation
+            }
         }
+    }
+
+    pub fn intensity(&self) -> Vector {
+        self.color_info.intensity()
+    }
+}
+
+impl RectangularLight {
+    pub fn new(pos: Vector, dir: Vector, width: f32, height: f32, samples: u32, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
+        let up = Vector::vec3(0.0, 1.0, 0.0);
+
+        let look_at = Matrix::look_at_rh(pos.vec3_normalize(), dir.vec3_normalize(), up);
+        let translation = Matrix::translation_matrix(pos);
+        let world = look_at * translation;
+
+        Self {
+            position: pos,
+            direction: dir,
+            rec: Rectangle {
+                width: width,
+                height: height, 
+            },
+            samples: samples,
+            color_info: LightColorInfo {
+                brightness: brightness,
+                color: color,
+                exposure: 0
+            },
+            distance_info: LightDistanceInfo {
+                range: range,
+                attenuation: attenuation
+            },
+            world: world
+        }
+    }
+
+    pub fn intensity(&self) -> Vector {
+        self.color_info.intensity() / self.rec.area()
     }
 }
 
 pub enum Lights {
     Directional(DirectionalLight),
-    Point(PointLight)
+    Point(PointLight),
+    Rectangular(RectangularLight)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -78,16 +156,16 @@ impl Material {
 pub struct ShadingData {
     position: Vector,
     normal: Vector,
-    textureCoord: Vector,
+    texture_coord: Vector,
     material: Material
 }
 
 impl ShadingData {
-    pub fn new (position: Vector, normal: Vector, textureCoord: Vector, material: Material) -> Self {
+    pub fn new (position: Vector, normal: Vector, texture_coord: Vector, material: Material) -> Self {
         Self {
             position: position,
             normal: normal,
-            textureCoord: textureCoord,
+            texture_coord: texture_coord,
             material: material,
         }
     }
@@ -108,7 +186,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         let v = -dir;
                         let n = data.normal;
 
-                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, 1.0, light.brightness, light.color, &mut diffuse, &mut specular);
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, 1.0, light.intensity(), &mut diffuse, &mut specular);
                     },
                     _ => ()
                 }
@@ -123,10 +201,62 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         let n = data.normal;
 
                         let falloff = 4.0 * consts::PI * distance * distance;
-                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.brightness, light.color, &mut diffuse, &mut specular);
+                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut diffuse, &mut specular);
                     },
                     _ => ()
                 }
+            }
+            Lights::Rectangular(light) => {
+                let mut rec_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+                let mut rec_spec = Vector::vec3(0.0, 0.0, 0.0);
+
+                let world = light.world;
+                let mut samples = light.samples;
+
+                if ray_type != RayType::CameraRay {
+                    samples = 1;
+                }
+
+                for _ in 0..samples {
+                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.width - light.rec.width * 0.5;
+                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.height - light.rec.width * 0.5;
+
+                    let sample_pos = Vector::vec3(rand1, rand2, 0.0);
+                    let world_pos = sample_pos * world; 
+
+                    let mut l = world_pos - data.position;
+                    let distance = l.vec3_length_f32();
+                    l /= distance;  
+
+                    let o = data.position + data.normal * 0.0001;
+
+                    if intersect_plane(o, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut Vector::vec3(0.0, 0.0, 0.0)) {
+                        match trace(o, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                            None => {
+                                let v = -dir;
+                                let n = data.normal;
+        
+                                let falloff = distance * distance;
+    
+                                let mut sample_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+                                let mut sample_spec = Vector::vec3(0.0, 0.0, 0.0); 
+    
+                                compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
+    
+                                rec_diffuse += sample_diffuse;
+                                rec_spec += sample_spec;
+                            },
+                            _ => ()
+                        }
+                    }
+                }
+
+                let a = 1.0 / (samples as f32 * light.rec.area());
+                rec_diffuse *= a;
+                rec_spec *= a;
+
+                diffuse += rec_diffuse;
+                specular += rec_spec;
             }
         }
     }
@@ -156,7 +286,7 @@ fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
     spec_color + (Vector::vec3(1.0, 1.0, 1.0) - spec_color) * (1.0 - l_dot_h).powf(5.0)
 }
 
-fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, brightness: f32, light_color: Vector, diffuse: &mut Vector, specular: &mut Vector) {
+fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, light_intensity: Vector, diffuse: &mut Vector, specular: &mut Vector) {
     let a2 = roughness * roughness;
 
     let h =  (v + l).vec3_normalize();
@@ -165,13 +295,13 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
     let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
 
-    let F = schlick_fresnel_aprx(l_o_h, specular_color);
-    let D = ggx_distribution(n_o_h, a2);
-    let G = smith_for_ggx(n_o_l, n_o_v, a2);
-    let brdf = F * G * D;
+    let f = schlick_fresnel_aprx(l_o_h, specular_color);
+    let d = ggx_distribution(n_o_h, a2);
+    let g = smith_for_ggx(n_o_l, n_o_v, a2);
+    let brdf = f * g * d;
 
-    let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - F;
-    let energy = (light_color * brightness) / falloff * n_o_l;
+    let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - f;
+    let energy = (light_intensity / falloff) * n_o_l;
     *specular += brdf * energy;
     *diffuse += diffuse_term * energy;
 }
@@ -211,7 +341,7 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             samples = 1;
         }
 
-        let V = -dir;
+        let v = -dir;
         let n = data.normal;
         let a2 = data.material.roughness * data.material.roughness;
 
@@ -221,29 +351,29 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
         
             let sample = importance_sample_ggx(rand1, rand2, a2);
         
-            let H = (sample.0 * *tbn).vec3_normalize();
-			let L = (H * 2.0 * V.vec3_dot(H)) - V;
+            let h = (sample.0 * *tbn).vec3_normalize();
+			let l = (h * 2.0 * v.vec3_dot(h)) - v;
 
             let pdf = sample.1;
 
-            let n_o_v = n.vec3_dot_f32(V).abs();
-            let n_o_l = clamp(n.vec3_dot_f32(L), 0.0, 1.0);
+            let n_o_v = n.vec3_dot_f32(v).abs();
+            let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
 
             if n_o_v == 0.0 || n_o_l == 0.0 {
                 continue;
             }
 
-            let light_color = cast_ray(data.position + L * 0.0001, L, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats) / pdf;
+            let light_color = cast_ray(data.position + l * 0.0001, l, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats) / pdf;
 
-            let l_o_h = clamp(L.vec3_dot_f32(H), 0.0, 1.0);
+            let l_o_h = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
             // let v_o_h = clamp(V.vec3_dot_f32(H), 0.0, 1.0);
 
-            let n_o_h = clamp(n.vec3_dot_f32(H), 0.0, 1.0);
+            let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
 
-            let F = schlick_fresnel_aprx(l_o_h, data.material.specular);
-            let D = ggx_distribution(n_o_h, a2);
-            let G = smith_for_ggx(n_o_l, n_o_v, a2);
-            let res = F * D * G * light_color * n_o_l;
+            let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
+            let d = ggx_distribution(n_o_h, a2);
+            let g = smith_for_ggx(n_o_l, n_o_v, a2);
+            let res = f * d * g * light_color * n_o_l;
 
             *specular += res;
         }
@@ -316,8 +446,8 @@ fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32)
 	let z = sin_theta * phi.sin();
 	
 	let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
-	let D = a2 / (consts::PI * d * d);
-	let pdf = D * cos_theta;
+	let d = a2 / (consts::PI * d * d);
+	let pdf = d * cos_theta;
 
     (Vector::vec3(x, cos_theta, z), pdf)
 }

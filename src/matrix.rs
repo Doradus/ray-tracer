@@ -231,6 +231,19 @@ impl Matrix {
             row_4: Vector::vec4(0.0, 0.0, 0.0, 1.0)
         }
     }
+
+    #[inline]
+    pub fn look_at_rh(eye_pos: Vector, focus: Vector, up: Vector) -> Self {
+        let forward = (focus - eye_pos).vec3_normalize();
+        let right = forward.vec3_cross(up).vec3_normalize();
+
+        Self {
+            row_1: right,
+            row_2: up,
+            row_3: forward,
+            row_4: Vector::vec4(0.0, 0.0, 0.0, 1.0)
+        }
+    }
 }
 
 impl fmt::Display for Matrix {

@@ -6,7 +6,7 @@ use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use std::{ops, fmt, mem};
+use std::{ops, fmt};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Axis {
@@ -324,6 +324,18 @@ impl ops::Div<f32> for Vector {
         unsafe {
             let rhs = _mm_set_ps1(_rhs);
             Self (_mm_div_ps(self.0, rhs))
+        }
+    }
+}
+
+impl ops::Div<Vector> for f32 {
+    type Output = Vector;
+
+    #[inline]
+    fn div(self, _rhs: Vector) -> Vector {
+        unsafe {
+            let lhs = _mm_set_ps1(self);
+            Vector (_mm_div_ps(lhs, _rhs.0))
         }
     }
 }

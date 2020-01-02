@@ -271,6 +271,7 @@ fn flatten_bvh_tree(build_node: &BVHBuildNode, offset: &mut usize, nodes:  &mut 
     // let new_offset = *offset;
 
     if build_node.num_objects > 0 {
+        println!("BVH node objects: {}",  build_node.num_objects);
         nodes[current_offset].prim_offset = build_node.first_object_offset as i32;
         nodes[current_offset].num_prim = build_node.num_objects;
     } else {

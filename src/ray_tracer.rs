@@ -1,5 +1,5 @@
 use crate::vector_simd::Vector;
-use crate::geometry::{Mesh, BoundingBox};
+use crate::geometry::{Mesh};
 use crate::scene::*;
 use crate::shading::{calculate_color, ShadingData};
 use crate::Stats;
@@ -57,7 +57,7 @@ pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], n
     stats.num_rays_shot += 1;
     let mut closest = near;
 
-    let inv_dir = Vector::vec3(1.0 / direction.x(), 1.0 / direction.y(), 1.0 / direction.z());
+    let inv_dir = 1.0 / direction;
     let sign_x = if inv_dir.x() < 0.0 {1} else {0};
     let sign_y = if inv_dir.y() < 0.0 {1} else {0};
     let sign_z = if inv_dir.z() < 0.0 {1} else {0};
@@ -164,6 +164,8 @@ fn intersect_mesh(origin: Vector, direction: Vector, scene_object: &Mesh, stats:
             let v_0 = scene_object.indices[index] as usize;
             let v_1 = scene_object.indices[index + 1] as usize;
             let v_2 = scene_object.indices[index + 2] as usize;
+
+            // let v = scene_object.indices[index..(index + )]
 
             match intersect_triangle(origin, direction, scene_object.vertices[v_0].pos, scene_object.vertices[v_1].pos, scene_object.vertices[v_2].pos, stats) {
                 Some(tri_result) => {

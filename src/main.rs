@@ -1,4 +1,3 @@
-// mod vector;
 mod vector_simd;
 mod matrix;
 mod geometry;
@@ -12,7 +11,6 @@ mod bvh;
 use scene::*;
 use test_scenes::*;
 use vector_simd::Vector;
-// use vector_simd::VectorSimd;
 use std::time::Instant;
 use ray_tracer::{RayType, cast_ray};
 use std::{f32, f32::consts, fmt};
@@ -92,7 +90,7 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 3, 0, 1, 15, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(720, 720, 3, 0, 0, 1, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -100,13 +98,13 @@ fn main() {
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
 
-    let y_divisions = (max_threads as f32).sqrt().floor();
-    let x_divisions = (max_threads as f32) / y_divisions;
+    let y_divisions = 20;
+    let x_divisions = 20;
 
     let mut thread_info = Vec::new();
 
-    let cell_width = settings.width / (x_divisions as u32);
-    let cell_height = settings.height / (y_divisions as u32); 
+    let cell_width = settings.width / x_divisions;
+    let cell_height = settings.height / y_divisions; 
 
     for y in 0..x_divisions as u32 {
         for x in 0..x_divisions as u32 {
@@ -114,16 +112,27 @@ fn main() {
         }
     }
 
-    let thread_counter = AtomicUsize::new(0);
+    let num_render_jobs = x_divisions * y_divisions;
+    let render_job_counter = AtomicUsize::new(0);
+    let threads_spawned = AtomicUsize::new(0);
 
     let now = Instant::now();
     crossbeam_utils::thread::scope(|s| {
         for _ in 0..max_threads {
             s.spawn(|_| {   
                 let mut stats = Stats {..Default::default()};
-                let i = thread_counter.fetch_add(1, Ordering::Relaxed);
-                render(thread_info[i], &buffer, settings, &scene, &mut stats);
-                println!("thread: {}, num triangle intersects: {}", i, stats.num_tringle_tests);
+                let thread_num = threads_spawned.fetch_add(1, Ordering::Relaxed);
+                loop {
+                    let i = render_job_counter.fetch_add(1, Ordering::Relaxed);
+
+                    if i >= num_render_jobs as usize {
+                        break;
+                    }
+
+                    render(thread_info[i], &buffer, settings, &scene, &mut stats);
+
+                }
+                println!("thread: {}, num triangle intersects: {}", thread_num, stats.num_tringle_tests);
             });       
         };
     }).unwrap();
