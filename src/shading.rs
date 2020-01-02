@@ -92,13 +92,11 @@ impl PointLight {
 
 impl RectangularLight {
     pub fn new(pos: Vector, dir: Vector, width: f32, height: f32, samples: u32, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
-        let forward = (dir - pos).vec3_normalize();
         let up = Vector::vec3(0.0, 1.0, 0.0);
-        let side = forward.vec3_cross(up).vec3_normalize();
 
-        let rotation = Matrix::from_vector(side, up, forward, Vector::vec4(0.0, 0.0, 0.0, 1.0));
+        let look_at = Matrix::look_at_rh(pos.vec3_normalize(), dir.vec3_normalize(), up);
         let translation = Matrix::translation_matrix(pos);
-        let world = rotation * translation;
+        let world = look_at * translation;
 
         Self {
             position: pos,
