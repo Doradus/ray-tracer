@@ -257,7 +257,7 @@ impl BoundingBox {
         }
     }
 
-    pub fn union(self, other: BoundingBox) -> Self {
+    pub fn union(&self, other: BoundingBox) -> Self {
         Self {
             bounds: [
                 Vector::vec3(
@@ -274,7 +274,7 @@ impl BoundingBox {
         }
     }
 
-    pub fn union_from_vector(self, other: Vector) -> Self {
+    pub fn union_from_vector(&self, other: Vector) -> Self {
         Self {
             bounds: [
                 Vector::vec3(
@@ -291,7 +291,7 @@ impl BoundingBox {
         }
     }
     
-    pub fn maximum_extent(self)-> u8 {
+    pub fn maximum_extent(&self)-> u8 {
         let d = self.diagonal();
 
         if d.x() > d.y() && d.x() > d.z() {
@@ -303,15 +303,15 @@ impl BoundingBox {
         }
     }
 
-    pub fn diagonal(self) -> Vector {
+    pub fn diagonal(&self) -> Vector {
         self.bounds[1] - self.bounds[0]
     }
 
-    pub fn min(self) -> Vector {
+    pub fn min(&self) -> Vector {
         self.bounds[0]
     }
 
-    pub fn max(self) -> Vector {
+    pub fn max(&self) -> Vector {
         self.bounds[1]
     }
 
@@ -325,7 +325,7 @@ impl BoundingBox {
         if pos.z() > self.bounds[1].z() {self.bounds[1].set_z(pos.z())};
     }
 
-    pub fn offset(self, point: Vector) -> Vector {
+    pub fn offset(&self, point: Vector) -> Vector {
         let mut offset = point - self.bounds[0];
 
         if self.bounds[0].x() < self.bounds[1].x() {
@@ -343,7 +343,7 @@ impl BoundingBox {
         offset
     }
 
-    pub fn surface_area(self) -> f32 {
+    pub fn surface_area(&self) -> f32 {
         let d = self.diagonal();
 
         2.0 * (d.x() * d.y() + d.x() * d.z() + d.y() * d.z())

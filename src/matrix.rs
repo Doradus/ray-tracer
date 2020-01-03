@@ -234,14 +234,16 @@ impl Matrix {
 
     #[inline]
     pub fn look_at_rh(eye_pos: Vector, focus: Vector, up: Vector) -> Self {
-        let forward = (focus - eye_pos).vec3_normalize();
-        let right = forward.vec3_cross(up).vec3_normalize();
+        let temp = up;
+        let forward = (eye_pos - focus).vec3_normalize();
+        let right = temp.vec3_cross(forward).vec3_normalize();
+        let up = forward.vec3_cross(right).vec3_normalize();
 
         Self {
             row_1: right,
             row_2: up,
             row_3: forward,
-            row_4: Vector::vec4(0.0, 0.0, 0.0, 1.0)
+            row_4: Vector::vec4(eye_pos.x(), eye_pos.y(), eye_pos.z(), 1.0)
         }
     }
 }
