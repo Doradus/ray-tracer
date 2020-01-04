@@ -96,7 +96,7 @@ fn main() {
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = area_ligt();
-    let camera = Camera::new(Vector::vec3(0.0, 0.75, 0.0), Vector::vec3(0.0, -0.3, -1.5));
+    let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, -0.0, -1.0));
 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);

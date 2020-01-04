@@ -163,24 +163,24 @@ pub fn area_ligt() -> SceneData {
 
     let sphere1 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(-0.4, -0.3, -1.5),
+        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
+        Vector::vec3(-0.42, -0.3, -1.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let sphere2 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(0.0, -0.3, -1.5),
+        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        Vector::vec3(0.0, -0.3, -1.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let sphere3 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(0.4, -0.3, -1.5),
+        Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.8, 1.0, 0.0, 0.0),
+        Vector::vec3(0.42, -0.3, -1.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
@@ -207,7 +207,7 @@ pub fn area_ligt() -> SceneData {
     // let lights = vec![point_light];
 
     let directional_light = Lights::Directional(DirectionalLight::new(Vector::vec3(-0.0, -0.6, -0.8), 1.5, Vector::vec3(1.0, 1.0, 1.0)));
-    let rec_light = Lights::Rectangular(RectangularLight::new(Vector::vec3(0.0, 0.0, -0.25), Vector::vec3(0.0, 0.0, -1.0), 1.75, 1.5, 500, 30.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let rec_light = Lights::Rectangular(RectangularLight::new(Vector::vec3(0.0, 0.0, -0.25), Vector::vec3(0.0, 0.0, -1.0), 1.75, 1.5, 400, 30.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![rec_light];
 
     let bvh_res = build_bvh(&scene_objects);

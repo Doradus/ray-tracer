@@ -216,25 +216,37 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     samples = 1;
                 }
 
-                for _ in 0..samples {
-                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.width - light.rec.width * 0.5;
-                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.height - light.rec.width * 0.5;
+                let t;
+                let n = data.normal;
+                if n.x().abs() > n.y().abs() {
+                    t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
+                } else {
+                    t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
+                }
+            
+                let b = n.vec3_cross(t);
+            
+                let tbn = Matrix::from_vector(
+                    t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+                );
 
-                    let sample_pos = Vector::vec3(rand1, rand2, 0.0);
-                    let world_pos = sample_pos * world; 
+                for _ in 0..samples {
+                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+
+                    let sample_rec = sample_rectangle_uniform(rand1, rand2, &light.rec);
+                    let world_pos = sample_rec.0 * world; 
 
                     let mut l = world_pos - data.position;
                     let distance = l.vec3_length_f32();
                     l /= distance;  
 
-                    let o = data.position + data.normal * 0.0001;
+                    let v = -dir;
+                    let origin = data.position + data.normal * 0.0001;
 
-                    if intersect_plane(o, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut Vector::vec3(0.0, 0.0, 0.0)) {
-                        match trace(o, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                            None => {
-                                let v = -dir;
-                                let n = data.normal;
-        
+                    if intersect_plane(origin, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut Vector::vec3(0.0, 0.0, 0.0)) {
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                            None => {        
                                 let falloff = distance * distance;
     
                                 let mut sample_diffuse = Vector::vec3(0.0, 0.0, 0.0);
@@ -242,15 +254,46 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
     
                                 compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
     
-                                rec_diffuse += sample_diffuse;
-                                rec_spec += sample_spec;
+                                rec_diffuse += sample_diffuse / sample_rec.1;     
                             },
                             _ => ()
                         }
                     }
-                }
 
-                let a = 1.0 / (samples as f32 * light.rec.area());
+                    let a2 = data.material.roughness * data.material.roughness;
+                    let sample = importance_sample_ggx(rand1, rand2, a2);
+        
+                    let h = (sample.0 * tbn).vec3_normalize();
+                    let l = (h * 2.0 * v.vec3_dot(h)) - v;
+    
+                    let pdf = sample.1;
+    
+                    let n_o_v = n.vec3_dot_f32(v).abs();
+                    let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);            
+    
+                    let mut hit = Vector::vec3(0.0, 0.0, 0.0);
+                    if intersect_plane(origin, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut hit) {
+                        let distance = (data.position - hit).vec3_length_f32();
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                            None => {
+                                let light_color = light.intensity();
+
+                                let l_o_h = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
+                                let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+                    
+                                let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
+                                let d = ggx_distribution(n_o_h, a2);
+                                let g = smith_for_ggx(n_o_l, n_o_v, a2);
+                                let res = f * d * g * light_color * n_o_l;
+                    
+                                rec_spec += res / pdf;
+                            },
+                            _ => ()
+                        }
+                    }
+                } 
+
+                let a = 1.0 / (samples as f32);
                 rec_diffuse *= a;
                 rec_spec *= a;
 
@@ -449,4 +492,12 @@ fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32)
 	let pdf = d * cos_theta;
 
     (Vector::vec3(x, cos_theta, z), pdf)
+}
+
+#[inline]
+fn sample_rectangle_uniform(rand1: f32, rand2: f32, rec: &Rectangle) -> (Vector, f32) {
+    let x = rand1 * rec.width - rec.width * 0.5;
+    let y = rand2 * rec.height - rec.width * 0.5;
+
+    (Vector::vec3(x, y, 0.0), rec.area())
 }
