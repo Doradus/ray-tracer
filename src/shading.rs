@@ -49,7 +49,10 @@ pub struct RectangularLight {
     pub samples: u32,
     pub color_info: LightColorInfo,
     pub distance_info: LightDistanceInfo,
-    pub world: Matrix
+    pub world: Matrix,
+    pub s: Vector,
+    pub v1: Vector,
+    pub v2: Vector,
 }
 
 impl DirectionalLight {
@@ -97,6 +100,10 @@ impl RectangularLight {
         let look_at = Matrix::look_at_rh(pos, dir, up);
         let world = look_at;
 
+        let s = Vector::vec3(-width * 0.5, -height * 0.5, 0.0) * look_at;
+        let v1 = Vector::vec3(width, 0.0, 0.0);
+        let v2 = Vector::vec3(0.0, height, 0.0);
+
         Self {
             position: pos,
             direction: dir,
@@ -114,7 +121,10 @@ impl RectangularLight {
                 range: range,
                 attenuation: attenuation
             },
-            world: world
+            world: world,
+            s: s,
+            v1: v1,
+            v2: v2
         }
     }
 
@@ -244,7 +254,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     let v = -dir;
                     let origin = data.position + data.normal * 0.0001;
 
-                    if intersect_plane(origin, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut Vector::vec3(0.0, 0.0, 0.0)) {
+                    if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut Vector::vec3(0.0, 0.0, 0.0)) {
                         match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
                             None => {        
                                 let falloff = distance * distance;
@@ -272,7 +282,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);            
     
                     let mut hit = Vector::vec3(0.0, 0.0, 0.0);
-                    if intersect_plane(origin, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut hit) {
+                    if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut hit) {
                         let distance = (data.position - hit).vec3_length_f32();
                         match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
                             None => {
