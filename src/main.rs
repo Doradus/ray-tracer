@@ -18,8 +18,6 @@ use std::{f32, f32::consts, fmt};
 use image;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::UnsafeCell;
-use camera::Camera;
-
 
 pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
 
@@ -92,12 +90,11 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(720, 720, 3, 0, 0, 1, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(1280, 720, 3, 3, 3, 8, Vector::vec3(0.86, 0.92, 1.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = gi_test();
-    let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
-
+    let scene = spehres();
+ 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
 
@@ -132,7 +129,7 @@ fn main() {
                         break;
                     }
 
-                    render(thread_info[i], &buffer, settings, &scene, &camera, &mut stats);
+                    render(thread_info[i], &buffer, settings, &scene, &mut stats);
 
                 }
                 println!("thread: {}, num triangle intersects: {}", thread_num, stats.num_tringle_tests);
@@ -146,8 +143,8 @@ fn main() {
     write_to_file(&buffer);
 }
 
-fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, camera: &Camera, stats: &mut Stats) {
-    let origin = Vector::vec3(0.0, 0.0, 0.0) * camera.to_world;
+fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
+    let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
     let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
 
@@ -164,7 +161,7 @@ fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSet
             for i in 0..sample_points.len() {
                 let p_x = (2.0 * (x as f32 + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
                 let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
-                let dir = Vector::vec3(p_x, p_y, -1.0)  * camera.to_world;
+                let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
                 let ray_dir = dir - origin;
                 color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
             }

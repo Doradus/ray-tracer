@@ -504,8 +504,8 @@ pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal:
         let t = dist.vec3_dot_f32(normal) / denom;
 
         if t > 0.0 { 
-            let hit = ray_origin + ray_dir * t;
-            let diff = hit - pos; 
+            let hit_at = ray_origin + ray_dir * t;
+            let diff = hit_at - pos; 
 
             let q1 = v1.vec3_dot_f32(diff);
             let q2 = v2.vec3_dot_f32(diff);

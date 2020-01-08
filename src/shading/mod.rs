@@ -1,166 +1,18 @@
 #![allow(dead_code)]
+pub mod lights;
+pub mod materials;
+mod brdf;
+mod monte_carlo;
 
-use crate::Vector;
-use crate::ray_tracer::*;
-use crate::scene::*;
-use crate::Stats;
-use crate::RenderSettings;
-use crate::matrix::Matrix;
-use crate::geometry::*;
-use std::f32;
-use std::f32::consts;
-use crate::math::*;
+use self::materials::Material;
+use self::lights::Lights;
+use self::brdf::*;
+use self::monte_carlo::*;
+
+use crate::{Vector, ray_tracer::*, scene::*, Stats, RenderSettings, matrix::Matrix, geometry::*, math::*};
+
+use std::{f32, f32::consts};
 use rand::Rng;
-
-pub struct LightColorInfo {
-    pub brightness: f32,
-    pub color: Vector,
-    pub exposure: i32
-}
-
-impl LightColorInfo {
-    pub fn intensity(&self) -> Vector {
-        let exp = if self.exposure < 1 {1.0} else {(2.0 as f32).powi(self.exposure)};
-
-        self.color * self.brightness * exp        
-    }
-}
-
-pub struct LightDistanceInfo {
-    pub range: f32,
-    pub attenuation: Vector
-}
-
-pub struct DirectionalLight {
-    pub direction: Vector,
-    pub color_info: LightColorInfo
-} 
-
-pub struct PointLight {
-    pub position: Vector,
-    pub color_info: LightColorInfo,
-    pub distance_info: LightDistanceInfo
-}
-
-pub struct RectangularLight {
-    pub position: Vector,
-    pub direction: Vector,
-    pub rec: Rectangle,
-    pub samples: u32,
-    pub color_info: LightColorInfo,
-    pub distance_info: LightDistanceInfo,
-    pub world: Matrix,
-    pub s: Vector,
-    pub v1: Vector,
-    pub v2: Vector,
-}
-
-impl DirectionalLight {
-    pub fn new(dir: Vector, brightness: f32, color: Vector) -> Self {
-        Self {
-            direction: dir,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            }
-        }
-    } 
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity()
-    }
-}
-
-impl PointLight {
-    pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
-        Self {
-            position: pos,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            },
-            distance_info: LightDistanceInfo {
-                range: range,
-                attenuation: attenuation
-            }
-        }
-    }
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity()
-    }
-}
-
-impl RectangularLight {
-    pub fn new(pos: Vector, dir: Vector, width: f32, height: f32, samples: u32, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
-        let up = Vector::vec3(0.0, 1.0, 0.0);
-
-        let look_at = Matrix::look_at_rh(pos, dir, up);
-        let world = look_at;
-
-        let s = Vector::vec3(-width * 0.5, -height * 0.5, 0.0) * look_at;
-        let v1 = Vector::vec3(width, 0.0, 0.0);
-        let v2 = Vector::vec3(0.0, height, 0.0);
-
-        Self {
-            position: pos,
-            direction: dir,
-            rec: Rectangle {
-                width: width,
-                height: height, 
-            },
-            samples: samples,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            },
-            distance_info: LightDistanceInfo {
-                range: range,
-                attenuation: attenuation
-            },
-            world: world,
-            s: s,
-            v1: v1,
-            v2: v2
-        }
-    }
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity() / self.rec.area()
-    }
-}
-
-pub enum Lights {
-    Directional(DirectionalLight),
-    Point(PointLight),
-    Rectangular(RectangularLight)
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Material {
-    pub albedo: Vector,
-    pub specular: Vector,
-    pub roughness: f32,
-    pub ior: f32,
-    pub transmission: f32,
-    pub metalicness: f32
-}
-
-impl Material {
-    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32, transmission: f32, metalicness: f32) -> Self {
-        Self {
-            albedo: albedo,
-            specular: specular,
-            roughness: roughness,
-            ior: ior,
-            transmission: transmission, 
-            metalicness: metalicness
-        }
-    }
-}
 
 pub struct ShadingData {
     position: Vector,
@@ -318,26 +170,6 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
     color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0))
 }
 
-#[inline]
-fn ggx_distribution(n_dot_h: f32, a: f32) -> f32 {
-    let a2 = a * a;
-    let d = (n_dot_h * a2 - n_dot_h) * n_dot_h + 1.0;
-    a2 / (consts::PI * d * d)
-}
-
-#[inline]
-fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
-    let a2 = a * a;
-    let lambda_l = n_dot_v * ((-n_dot_l * a2 + n_dot_l) * n_dot_l + a2).sqrt();
-    let lambda_v = n_dot_l * ((-n_dot_v * a2 + n_dot_v) * n_dot_v + a2).sqrt();
-    0.5 / (lambda_l + lambda_v)  
-}
-
-#[inline]
-fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
-    spec_color + (Vector::vec3(1.0, 1.0, 1.0) - spec_color) * (1.0 - l_dot_h).powf(5.0)
-}
-
 fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, light_intensity: Vector, diffuse: &mut Vector, specular: &mut Vector) {
     let a2 = roughness * roughness;
 
@@ -456,58 +288,4 @@ fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_d
     
         *diffuse /= samples as f32;
     }
-}
-
-#[inline]
-fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> (Vector, f32) {
-    let sin_theta = (1.0 - rand1 * rand1).sqrt();
-    let phi = 2.0 * consts::PI * rand2;
-
-    let x = sin_theta * phi.cos();
-    let z = sin_theta * phi.sin();
-    let pdf = 1.0 / (2.0 * consts::PI);
-    (Vector::vec3(x, sin_theta, z), pdf)
-}
-
-#[inline]
-fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> (Vector, f32) {
-    let sin2_theta  = rand1;
-    let cos2_theta = 1.0 - sin2_theta;
-    let sin_theta = sin2_theta.sqrt();
-    let cos_theta = cos2_theta.sqrt();
-
-    let phi = 2.0 * consts::PI * rand2;
-
-    let x = sin_theta * phi.cos();
-    let z = sin_theta * phi.sin();
-
-    let pdf = cos_theta / consts::PI;
-
-    (Vector::vec3(x, cos_theta, z), pdf)
-}
-
-#[inline]
-fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32) {
-	let a2 = roughness * roughness;
-
-	let phi = 2.0 * consts::PI * rand1;
-	let cos_theta = ((1.0 - rand2) / ( 1.0 + (a2 - 1.0) * rand2 )).sqrt();
-	let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-
-	let x = sin_theta * phi.cos();
-	let z = sin_theta * phi.sin();
-	
-	let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
-	let d = a2 / (consts::PI * d * d);
-	let pdf = d * cos_theta;
-
-    (Vector::vec3(x, cos_theta, z), pdf)
-}
-
-#[inline]
-fn sample_rectangle_uniform(rand1: f32, rand2: f32, rec: &Rectangle) -> (Vector, f32) {
-    let x = rand1 * rec.width - rec.width * 0.5;
-    let y = rand2 * rec.height - rec.width * 0.5;
-
-    (Vector::vec3(x, y, 0.0), rec.area())
 }
