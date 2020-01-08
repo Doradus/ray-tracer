@@ -495,24 +495,26 @@ impl BoundingSpehere {
     }
 }
 
-pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal: Vector, width: f32, height: f32, hit_at: &mut Vector) -> bool {
+pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal: Vector, v1: Vector, v2: Vector, hit_at: &mut Vector) -> bool {
     
     let denom = ray_dir.vec3_dot_f32(normal);
 
-    if denom > 1e-6 {
+    if denom > f32::EPSILON {
         let dist = pos - ray_origin;
         let t = dist.vec3_dot_f32(normal) / denom;
 
         if t > 0.0 { 
-            // let hit = ray_origin + ray_dir * t;
-            // let diff = hit - pos; 
-            return true;
+            let hit_at = ray_origin + ray_dir * t;
+            let diff = hit_at - pos; 
 
-            // if diff.x() < pos.x() + width * 0.5 && diff.x() > pos.x() - width * 0.5 && diff.y() < pos.y() + height * 0.5 && diff.y() > pos.y() - height * 0.5 {
-            //     *hit_at = hit;
-            // } else {
-            //     return false;
-            // }
+            let q1 = v1.vec3_dot_f32(diff);
+            let q2 = v2.vec3_dot_f32(diff);
+
+            if 0.0 <= q1 && q1 <= v1.vec3_dot_f32(v1) && 0.0 <= q2 && q2 <= v2.vec3_dot_f32(v2) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

@@ -1,156 +1,18 @@
 #![allow(dead_code)]
+pub mod lights;
+pub mod materials;
+mod brdf;
+mod monte_carlo;
 
-use crate::Vector;
-use crate::ray_tracer::*;
-use crate::scene::*;
-use crate::Stats;
-use crate::RenderSettings;
-use crate::matrix::Matrix;
-use crate::geometry::*;
-use std::f32;
-use std::f32::consts;
-use crate::math::*;
+use self::materials::Material;
+use self::lights::Lights;
+use self::brdf::*;
+use self::monte_carlo::*;
+
+use crate::{Vector, ray_tracer::*, scene::*, Stats, RenderSettings, matrix::Matrix, geometry::*, math::*};
+
+use std::{f32, f32::consts};
 use rand::Rng;
-
-pub struct LightColorInfo {
-    pub brightness: f32,
-    pub color: Vector,
-    pub exposure: i32
-}
-
-impl LightColorInfo {
-    pub fn intensity(&self) -> Vector {
-        let exp = if self.exposure < 1 {1.0} else {(2.0 as f32).powi(self.exposure)};
-
-        self.color * self.brightness * exp        
-    }
-}
-
-pub struct LightDistanceInfo {
-    pub range: f32,
-    pub attenuation: Vector
-}
-
-pub struct DirectionalLight {
-    pub direction: Vector,
-    pub color_info: LightColorInfo
-} 
-
-pub struct PointLight {
-    pub position: Vector,
-    pub color_info: LightColorInfo,
-    pub distance_info: LightDistanceInfo
-}
-
-pub struct RectangularLight {
-    pub position: Vector,
-    pub direction: Vector,
-    pub rec: Rectangle,
-    pub samples: u32,
-    pub color_info: LightColorInfo,
-    pub distance_info: LightDistanceInfo,
-    pub world: Matrix
-}
-
-impl DirectionalLight {
-    pub fn new(dir: Vector, brightness: f32, color: Vector) -> Self {
-        Self {
-            direction: dir,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            }
-        }
-    } 
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity()
-    }
-}
-
-impl PointLight {
-    pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
-        Self {
-            position: pos,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            },
-            distance_info: LightDistanceInfo {
-                range: range,
-                attenuation: attenuation
-            }
-        }
-    }
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity()
-    }
-}
-
-impl RectangularLight {
-    pub fn new(pos: Vector, dir: Vector, width: f32, height: f32, samples: u32, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
-        let up = Vector::vec3(0.0, 1.0, 0.0);
-
-        let look_at = Matrix::look_at_rh(pos, dir, up);
-        let world = look_at;
-
-        Self {
-            position: pos,
-            direction: dir,
-            rec: Rectangle {
-                width: width,
-                height: height, 
-            },
-            samples: samples,
-            color_info: LightColorInfo {
-                brightness: brightness,
-                color: color,
-                exposure: 0
-            },
-            distance_info: LightDistanceInfo {
-                range: range,
-                attenuation: attenuation
-            },
-            world: world
-        }
-    }
-
-    pub fn intensity(&self) -> Vector {
-        self.color_info.intensity() / self.rec.area()
-    }
-}
-
-pub enum Lights {
-    Directional(DirectionalLight),
-    Point(PointLight),
-    Rectangular(RectangularLight)
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Material {
-    pub albedo: Vector,
-    pub specular: Vector,
-    pub roughness: f32,
-    pub ior: f32,
-    pub transmission: f32,
-    pub metalicness: f32
-}
-
-impl Material {
-    pub fn new(albedo: Vector, specular: Vector, roughness: f32, ior: f32, transmission: f32, metalicness: f32) -> Self {
-        Self {
-            albedo: albedo,
-            specular: specular,
-            roughness: roughness,
-            ior: ior,
-            transmission: transmission, 
-            metalicness: metalicness
-        }
-    }
-}
 
 pub struct ShadingData {
     position: Vector,
@@ -216,25 +78,37 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     samples = 1;
                 }
 
-                for _ in 0..samples {
-                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.width - light.rec.width * 0.5;
-                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0) * light.rec.height - light.rec.width * 0.5;
+                let t;
+                let n = data.normal;
+                if n.x().abs() > n.y().abs() {
+                    t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
+                } else {
+                    t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
+                }
+            
+                let b = n.vec3_cross(t);
+            
+                let tbn = Matrix::from_vector(
+                    t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+                );
 
-                    let sample_pos = Vector::vec3(rand1, rand2, 0.0);
-                    let world_pos = sample_pos * world; 
+                for _ in 0..samples {
+                    let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+                    let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+
+                    let sample_rec = sample_rectangle_uniform(rand1, rand2, &light.rec);
+                    let world_pos = sample_rec.0 * world; 
 
                     let mut l = world_pos - data.position;
                     let distance = l.vec3_length_f32();
                     l /= distance;  
 
-                    let o = data.position + data.normal * 0.0001;
+                    let v = -dir;
+                    let origin = data.position + data.normal * 0.0001;
 
-                    if intersect_plane(o, l, light.position, -light.direction.vec3_normalize(), light.rec.width, light.rec.height, &mut Vector::vec3(0.0, 0.0, 0.0)) {
-                        match trace(o, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                            None => {
-                                let v = -dir;
-                                let n = data.normal;
-        
+                    if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut Vector::vec3(0.0, 0.0, 0.0)) {
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                            None => {        
                                 let falloff = distance * distance;
     
                                 let mut sample_diffuse = Vector::vec3(0.0, 0.0, 0.0);
@@ -242,15 +116,46 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
     
                                 compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
     
-                                rec_diffuse += sample_diffuse;
-                                rec_spec += sample_spec;
+                                rec_diffuse += sample_diffuse / sample_rec.1;     
                             },
                             _ => ()
                         }
                     }
-                }
 
-                let a = 1.0 / (samples as f32 * light.rec.area());
+                    let a2 = data.material.roughness * data.material.roughness;
+                    let sample = importance_sample_ggx(rand1, rand2, a2);
+        
+                    let h = (sample.0 * tbn).vec3_normalize();
+                    let l = (h * 2.0 * v.vec3_dot(h)) - v;
+    
+                    let pdf = sample.1;
+    
+                    let n_o_v = n.vec3_dot_f32(v).abs();
+                    let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);            
+    
+                    let mut hit = Vector::vec3(0.0, 0.0, 0.0);
+                    if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut hit) {
+                        let distance = (data.position - hit).vec3_length_f32();
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                            None => {
+                                let light_color = light.intensity();
+
+                                let l_o_h = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
+                                let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+                    
+                                let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
+                                let d = ggx_distribution(n_o_h, a2);
+                                let g = smith_for_ggx(n_o_l, n_o_v, a2);
+                                let res = f * d * g * light_color * n_o_l;
+                    
+                                rec_spec += res / pdf;
+                            },
+                            _ => ()
+                        }
+                    }
+                } 
+
+                let a = 1.0 / (samples as f32);
                 rec_diffuse *= a;
                 rec_spec *= a;
 
@@ -263,26 +168,6 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
     let indirect_light = compute_indirect_light(dir, &data, scene, current_ray_depth, settings, ray_type, stats);
     let color = data.material.albedo / consts::PI * (diffuse + indirect_light.0) + specular + indirect_light.1;
     color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0))
-}
-
-#[inline]
-fn ggx_distribution(n_dot_h: f32, a: f32) -> f32 {
-    let a2 = a * a;
-    let d = (n_dot_h * a2 - n_dot_h) * n_dot_h + 1.0;
-    a2 / (consts::PI * d * d)
-}
-
-#[inline]
-fn smith_for_ggx(n_dot_l: f32, n_dot_v: f32, a: f32) -> f32 {
-    let a2 = a * a;
-    let lambda_l = n_dot_v * ((-n_dot_l * a2 + n_dot_l) * n_dot_l + a2).sqrt();
-    let lambda_v = n_dot_l * ((-n_dot_v * a2 + n_dot_v) * n_dot_v + a2).sqrt();
-    0.5 / (lambda_l + lambda_v)  
-}
-
-#[inline]
-fn schlick_fresnel_aprx(l_dot_h: f32, spec_color: Vector) -> Vector {
-    spec_color + (Vector::vec3(1.0, 1.0, 1.0) - spec_color) * (1.0 - l_dot_h).powf(5.0)
 }
 
 fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, light_intensity: Vector, diffuse: &mut Vector, specular: &mut Vector) {
@@ -403,50 +288,4 @@ fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_d
     
         *diffuse /= samples as f32;
     }
-}
-
-#[inline]
-fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> (Vector, f32) {
-    let sin_theta = (1.0 - rand1 * rand1).sqrt();
-    let phi = 2.0 * consts::PI * rand2;
-
-    let x = sin_theta * phi.cos();
-    let z = sin_theta * phi.sin();
-    let pdf = 1.0 / (2.0 * consts::PI);
-    (Vector::vec3(x, sin_theta, z), pdf)
-}
-
-#[inline]
-fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> (Vector, f32) {
-    let sin2_theta  = rand1;
-    let cos2_theta = 1.0 - sin2_theta;
-    let sin_theta = sin2_theta.sqrt();
-    let cos_theta = cos2_theta.sqrt();
-
-    let phi = 2.0 * consts::PI * rand2;
-
-    let x = sin_theta * phi.cos();
-    let z = sin_theta * phi.sin();
-
-    let pdf = cos_theta / consts::PI;
-
-    (Vector::vec3(x, cos_theta, z), pdf)
-}
-
-#[inline]
-fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32) {
-	let a2 = roughness * roughness;
-
-	let phi = 2.0 * consts::PI * rand1;
-	let cos_theta = ((1.0 - rand2) / ( 1.0 + (a2 - 1.0) * rand2 )).sqrt();
-	let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-
-	let x = sin_theta * phi.cos();
-	let z = sin_theta * phi.sin();
-	
-	let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
-	let d = a2 / (consts::PI * d * d);
-	let pdf = d * cos_theta;
-
-    (Vector::vec3(x, cos_theta, z), pdf)
 }

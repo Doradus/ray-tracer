@@ -236,7 +236,17 @@ impl Matrix {
     pub fn look_at_rh(eye_pos: Vector, focus: Vector, up: Vector) -> Self {
         let temp = up;
         let forward = (eye_pos - focus).vec3_normalize();
-        let right = temp.vec3_cross(forward).vec3_normalize();
+
+        let right;
+
+        if forward.y() == 1.0 {
+            right = Vector::vec3(1.0, 0.0, 0.0);
+        } else if forward.y() == -1.0 {
+            right = Vector::vec3(-1.0, 0.0, 0.0);
+        } else {
+            right = temp.vec3_cross(forward).vec3_normalize();
+        }
+
         let up = forward.vec3_cross(right).vec3_normalize();
 
         Self {
