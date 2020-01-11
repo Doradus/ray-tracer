@@ -10,7 +10,7 @@ pub(crate) fn sample_hemisphere_uniform(rand1: f32, rand2:f32) -> (Vector, f32) 
     let x = sin_theta * phi.cos();
     let z = sin_theta * phi.sin();
     let pdf = 1.0 / (2.0 * consts::PI);
-    (Vector::vec3(x, sin_theta, z), pdf)
+    (Vector::vec3(x, rand1, z), pdf)
 }
 
 #[inline]

@@ -52,19 +52,127 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     _ => ()
                 }
             },
-            Lights::Point(light) => {
-                let mut l = light.position - data.position;
-                let distance = l.vec3_length_f32();
-                l /= distance;      
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                    None => {
-                        let v = -dir;
-                        let n = data.normal;
+            Lights::Spherical(light) => {
+                if light.radius == 0.0 {
+                    let mut l = light.position - data.position;
+                    let distance = l.vec3_length_f32();
+                    l /= distance;      
+                    match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                        None => {
+                            let v = -dir;
+                            let n = data.normal;
+    
+                            let falloff = 4.0 * consts::PI * distance * distance;
+                            compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut diffuse, &mut specular);
+                        },
+                        _ => ()
+                    }
+                } else {
+                    let mut light_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+                    let mut light_spec = Vector::vec3(0.0, 0.0, 0.0);
+                    
+                    //create coords
+                    let mut w = light.position - data.position;
+                    let distance = w.vec3_length_f32();
+                    w /= distance;
 
-                        let falloff = 4.0 * consts::PI * distance * distance;
-                        compute_lighting(data.material.roughness, data.material.specular, n, v, l, falloff, light.intensity(), &mut diffuse, &mut specular);
-                    },
-                    _ => ()
+                    let (v, u) = create_orthonormal_coordinate_system(w);
+
+                    let to_world = Matrix::from_vector(
+                        v, w, u, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+                    );
+
+                    let mut samples = light.samples;
+
+                    let n = data.normal;
+                    let (t, b) = create_orthonormal_coordinate_system(n);
+                
+                    let tbn = Matrix::from_vector(
+                        t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+                    );
+
+                    if ray_type != RayType::CameraRay {
+                        samples = 1;
+                    }
+
+                    let x = light.radius / distance;
+                    let r = (1.0 - x * x).sqrt();
+
+                    for _ in 0..samples {
+                        let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+                        let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+
+                        let phi = 2.0 * consts::PI * rand1;
+                        let theta = (1.0 - rand2 + rand2 * r).acos();
+
+                        let cos_theta = theta.cos();
+                        let sin_theta = theta.sin();
+
+                        let x = sin_theta * phi.cos();
+                        let z = sin_theta * phi.sin();
+                    
+                        let l = Vector::vec3(x, cos_theta, z) * to_world;
+                        let origin = data.position + data.normal * 0.0001;
+                        let hit = &mut Vector::vec3(0.0, 0.0, 0.0);
+
+                        if intersect_sphere(light.position, light.radius * light.radius, origin, l.vec3_normalize(), hit) {
+                            let dist = (*hit - data.position).vec3_length_f32();
+
+                            match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                                None => {        
+                                    let falloff = dist * dist;
+        
+                                    let mut sample_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+                                    let mut sample_spec = Vector::vec3(0.0, 0.0, 0.0); 
+        
+                                    compute_lighting(data.material.roughness, data.material.specular, data.normal, -dir, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
+        
+                                    let pdf = 1.0 / (consts::PI * (1.0 - r));
+                                    light_diffuse += sample_diffuse / pdf;     
+                                    light_spec += sample_spec / pdf;
+                                },
+                                _ => ()
+                            }
+                        }
+
+                        let a2 = data.material.roughness * data.material.roughness;
+                        let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
+            
+                        let spec_v = -dir;
+                        let h = (sample * tbn).vec3_normalize();
+                        let l_spec = (h * 2.0 * spec_v.vec3_dot(h)) - spec_v;
+        
+                        let n_o_v = n.vec3_dot_f32(spec_v).abs();
+                        let n_o_l = clamp(n.vec3_dot_f32(l_spec), 0.0, 1.0);            
+        
+                        let spec_hit = &mut Vector::vec3(0.0, 0.0, 0.0);
+                        if intersect_sphere(light.position, light.radius * light.radius, origin, l_spec.vec3_normalize(), spec_hit) {
+                            let dist = (*spec_hit - data.position).vec3_length_f32();
+
+                            match trace(origin, l_spec, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                                None => {
+                                    let light_color = light.intensity() * (1.0 / (dist * dist));
+    
+                                    let l_o_h = clamp(l_spec.vec3_dot_f32(h), 0.0, 1.0);
+                                    let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+                        
+                                    let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
+                                    let d = ggx_distribution(n_o_h, a2);
+                                    let g = smith_for_ggx(n_o_l, n_o_v, a2);
+                                    let res = f * d * g * light_color * n_o_l;
+                        
+                                    light_spec += res / pdf;
+                                },
+                                _ => ()
+                            }
+                        }
+                    }
+
+                    light_diffuse *= 1.0 / (samples as f32);
+                    light_spec *= 1.0 / (samples as f32 * 2.0);
+
+                    diffuse += light_diffuse;
+                    specular += light_spec;
                 }
             }
             Lights::Rectangular(light) => {
@@ -78,15 +186,8 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     samples = 1;
                 }
 
-                let t;
                 let n = data.normal;
-                if n.x().abs() > n.y().abs() {
-                    t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
-                } else {
-                    t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
-                }
-            
-                let b = n.vec3_cross(t);
+                let (t, b) = create_orthonormal_coordinate_system(n);
             
                 let tbn = Matrix::from_vector(
                     t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
@@ -195,15 +296,9 @@ fn compute_indirect_light(dir: Vector, data: &ShadingData, scene: &SceneData, cu
     let mut indirect_specular = Vector::vec3(0.0, 0.0, 0.0);
 
     if current_ray_depth < settings.max_ray_depth {
-        let t;
         let n = data.normal;
-        if n.x().abs() > n.y().abs() {
-            t = Vector::vec3(n.z(), 0.0, -n.x()) / (n.x() * n.x() + n.z() * n.z()).sqrt();
-        } else {
-            t = Vector::vec3(0.0, -n.z(), n.y()) / (n.y() * n.y() + n.z() * n.z()).sqrt();
-        }
-    
-        let b = n.vec3_cross(t);
+
+        let (t, b) = create_orthonormal_coordinate_system(n);
     
         let tbn = Matrix::from_vector(
             t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
@@ -233,12 +328,10 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
             let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
         
-            let sample = importance_sample_ggx(rand1, rand2, a2);
+            let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
         
-            let h = (sample.0 * *tbn).vec3_normalize();
+            let h = (sample * *tbn).vec3_normalize();
 			let l = (h * 2.0 * v.vec3_dot(h)) - v;
-
-            let pdf = sample.1;
 
             let n_o_v = n.vec3_dot_f32(v).abs();
             let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
@@ -279,10 +372,9 @@ fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_d
             let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
             let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
         
-            let sample = sample_hemisphere_cosine_weighted(rand1, rand2);
+            let (sample, pdf) = sample_hemisphere_cosine_weighted(rand1, rand2);
         
-            let dir = (sample.0 * *tbn).vec3_normalize();
-            let pdf = sample.1;
+            let dir = (sample * *tbn).vec3_normalize();
             *diffuse += (cast_ray(data.position + dir * 0.0001, dir, scene, current_ray_depth + 1, settings, RayType::DiffuseRay, stats) / pdf) * clamp(dir.vec3_dot_f32(n), 0.0, 1.0);
         }
     

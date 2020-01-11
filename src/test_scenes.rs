@@ -277,7 +277,7 @@ pub fn furnance_test() -> SceneData {
 
     let scene_objects = vec![sphere];
 
-    let point_light = lights::Lights::Point(lights::PointLight::new(Vector::vec3(0.3, 1.5, -1.6), 0.0, Vector::vec3(1.0, 0.945, 0.878), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.3, 1.5, -1.6), 0.0, Vector::vec3(1.0, 0.945, 0.878), 2.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
     let lights = vec![point_light];
 
     let bvh_res = build_bvh(&scene_objects);
@@ -377,7 +377,9 @@ pub fn spehres() -> SceneData {
 
     let directional_light = lights::Lights::Directional(lights::DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.5, Vector::vec3(1.0, 1.0, 1.0)));
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.599, -3.0), Vector::vec3(0.0, -1.0, 0.0), 0.75, 0.75, 10, 5.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let lights = vec![directional_light];
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.5, -2.0), 30.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(0.0, 0.0, 1.0), 0.15, 100));
+    
+    let lights = vec![point_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
 
     let scene = SceneData {
@@ -479,7 +481,7 @@ pub fn gi_test() -> SceneData {
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
 
-    let point_light = lights::Lights::Point(lights::PointLight::new(Vector::vec3(0.0, 1.099, -3.0), 150.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(0.0, 0.0, 1.0)));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 1.099, -3.0), 150.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.099, -3.0), Vector::vec3(0.0, 0.0, -3.0), 0.75, 0.75, 10, 5.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![rec_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));

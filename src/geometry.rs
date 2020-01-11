@@ -462,37 +462,40 @@ impl BoundingSpehere {
         self.radius_sqrd = radius * radius;
     }
 
-    pub fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> bool {
-        let l = self.position - ray_origin;
 
-        let tca = l.vec3_dot_f32(ray_dir);
+}
 
-        if tca < 0.0 {
-            return false;
-        }
+pub fn intersect_sphere(position: Vector, radius_sqrd: f32, ray_origin: Vector, ray_dir: Vector, hit_at: &mut Vector) -> bool {
+    let l = position - ray_origin;
 
-        let d2 = l.vec3_dot_f32(l) - tca * tca;
+    let tca = l.vec3_dot_f32(ray_dir);
 
-        if d2 > self.radius_sqrd {
-            return false;            
-        }
-
-        let mut t0;
-        let t1;
-
-        let thc = (self.radius_sqrd - d2).sqrt(); 
-        t0 = tca - thc; 
-        t1 = tca + thc; 
-
-        if t0 < 0.0 { 
-            t0 = t1;
-            if t0 < 0.0 {
-                return false;                 
-            } 
-        }
-
-        true
+    if tca < 0.0 {
+        return false;
     }
+
+    let d2 = l.vec3_dot_f32(l) - tca * tca;
+
+    if d2 > radius_sqrd {
+        return false;            
+    }
+
+    let mut t0;
+    let t1;
+
+    let thc = (radius_sqrd - d2).sqrt(); 
+    t0 = tca - thc; 
+    t1 = tca + thc; 
+
+    if t0 < 0.0 { 
+        t0 = t1;
+        if t0 < 0.0 {
+            return false;                 
+        } 
+    }
+
+    *hit_at = ray_origin + ray_dir * t0;
+    true
 }
 
 pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal: Vector, v1: Vector, v2: Vector, hit_at: &mut Vector) -> bool {

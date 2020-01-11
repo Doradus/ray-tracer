@@ -23,14 +23,16 @@ pub struct LightDistanceInfo {
 
 pub struct DirectionalLight {
     pub direction: Vector,
-    pub color_info: LightColorInfo
+    pub color_info: LightColorInfo 
 } 
 
-pub struct PointLight {
+pub struct SphericalLight {
     pub position: Vector,
     pub color_info: LightColorInfo,
-    pub distance_info: LightDistanceInfo
-}
+    pub distance_info: LightDistanceInfo,
+    pub radius: f32,
+    pub samples: u32
+} 
 
 pub struct RectangularLight {
     pub position: Vector,
@@ -62,8 +64,8 @@ impl DirectionalLight {
     }
 }
 
-impl PointLight {
-    pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector) -> Self {
+impl SphericalLight {
+    pub fn new(pos: Vector, brightness: f32, color: Vector, range: f32, attenuation: Vector, radius: f32, samples: u32) -> Self {
         Self {
             position: pos,
             color_info: LightColorInfo {
@@ -74,7 +76,9 @@ impl PointLight {
             distance_info: LightDistanceInfo {
                 range: range,
                 attenuation: attenuation
-            }
+            },
+            radius: radius,
+            samples: samples
         }
     }
 
@@ -125,6 +129,6 @@ impl RectangularLight {
 
 pub enum Lights {
     Directional(DirectionalLight),
-    Point(PointLight),
+    Spherical(SphericalLight),
     Rectangular(RectangularLight)
 }
