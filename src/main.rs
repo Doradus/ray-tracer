@@ -91,6 +91,7 @@ struct RenderThreadInfo {
 
 fn main() {
     let settings = RenderSettings::new(1280, 720, 3, 0, 0, 1, Vector::vec3(0.86, 0.92, 1.0));
+    // let settings = RenderSettings::new(1280, 720, 3, 0, 0, 1, Vector::vec3(0.1, 0.1, 0.1));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = spehres();

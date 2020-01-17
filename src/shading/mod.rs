@@ -68,6 +68,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         _ => ()
                     }
                 } else {
+                    let beta = 1;
                     let mut light_diffuse = Vector::vec3(0.0, 0.0, 0.0);
                     let mut light_spec = Vector::vec3(0.0, 0.0, 0.0);
                     
@@ -97,6 +98,8 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
 
                     let x = light.radius / distance;
                     let r = (1.0 - x * x).sqrt();
+
+                    let a2 = data.material.roughness * data.material.roughness;
 
                     for _ in 0..samples {
                         let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
@@ -128,14 +131,21 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                                     compute_lighting(data.material.roughness, data.material.specular, data.normal, -dir, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
         
                                     let pdf = 1.0 / (consts::PI * (1.0 - r));
-                                    light_diffuse += sample_diffuse / pdf;     
-                                    light_spec += sample_spec / pdf;
+                                    let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
+                                    let d = a2 / (consts::PI * d * d);
+                                    let ggx_pdf = d * cos_theta;
+                                    
+                                    let combined_pdf = pdf.powi(beta) + ggx_pdf.powi(beta);
+
+                                    // light_diffuse += sample_diffuse / pdf; 
+                                    // light_spec += sample_spec / pdf;     
+
+                                    light_spec += (sample_spec * pdf.powi(beta)) / (combined_pdf * pdf);
                                 },
                                 _ => ()
                             }
                         }
 
-                        let a2 = data.material.roughness * data.material.roughness;
                         let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
             
                         let spec_v = -dir;
@@ -159,9 +169,13 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                                     let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
                                     let d = ggx_distribution(n_o_h, a2);
                                     let g = smith_for_ggx(n_o_l, n_o_v, a2);
-                                    let res = f * d * g * light_color * n_o_l;
+                                    let sample_spec = f * d * g * light_color * n_o_l;
                         
-                                    light_spec += res / pdf;
+                                    let solid_angle_pdf = 1.0 / (consts::PI * (1.0 - r));
+                                    let combined_pdf = pdf.powi(beta) + solid_angle_pdf.powi(beta);
+
+                                    // light_spec += sample_spec / pdf;   
+                                    light_spec += (sample_spec * pdf.powi(beta)) / (combined_pdf * pdf);
                                 },
                                 _ => ()
                             }
@@ -275,18 +289,18 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let a2 = roughness * roughness;
 
     let h =  (v + l).vec3_normalize();
-    let n_o_v = n.vec3_dot_f32(v).abs();
-    let l_o_h = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
-    let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
-    let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
+    let dot_nv = n.vec3_dot_f32(v).abs();
+    let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
+    let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+    let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
 
-    let f = schlick_fresnel_aprx(l_o_h, specular_color);
-    let d = ggx_distribution(n_o_h, a2);
-    let g = smith_for_ggx(n_o_l, n_o_v, a2);
-    let brdf = f * g * d;
+    let f = schlick_fresnel_aprx(dot_lh, specular_color);
+    let d = ggx_distribution(dot_nh, a2);
+    let g = smith_for_ggx(dot_nl, dot_nv, a2);
+    let brdf = f * d * g;
 
     let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - f;
-    let energy = (light_intensity / falloff) * n_o_l;
+    let energy = (light_intensity / falloff) * dot_nl;
     *specular += brdf * energy;
     *diffuse += diffuse_term * energy;
 }

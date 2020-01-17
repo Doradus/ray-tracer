@@ -34,7 +34,8 @@ pub(crate) fn sample_hemisphere_cosine_weighted(rand1: f32, rand2:f32) -> (Vecto
 pub(crate) fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (Vector, f32) {
 	let a2 = roughness * roughness;
 
-	let phi = 2.0 * consts::PI * rand1;
+    let phi = 2.0 * consts::PI * rand1;
+    // let theta = (1.0 - rand2).sqrt() / ((a2 - 1.0) * rand2 + 1.0);
 	let cos_theta = ((1.0 - rand2) / ( 1.0 + (a2 - 1.0) * rand2 )).sqrt();
 	let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 

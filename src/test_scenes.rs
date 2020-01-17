@@ -379,7 +379,7 @@ pub fn spehres() -> SceneData {
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.599, -3.0), Vector::vec3(0.0, -1.0, 0.0), 0.75, 0.75, 10, 5.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.5, -2.0), 30.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(0.0, 0.0, 1.0), 0.15, 100));
     
-    let lights = vec![point_light];
+    let lights = vec![directional_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
 
     let scene = SceneData {
@@ -391,6 +391,77 @@ pub fn spehres() -> SceneData {
     };
 
     scene
+}
+
+pub fn area_ligt_specular_test() -> SceneData {
+    // let plane1 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.0, -2.0),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(10.0), 0.0, 0.0)
+    // );
+
+    // let plane2 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.14, -2.5),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(20.0), 0.0, 0.0)
+    // );
+
+    // let plane3 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.36, -3.0),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(30.0), 0.0, 0.0)
+    // );
+
+    // let plane4 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.01, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.66, -3.4),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(40.0), 0.0, 0.0)
+    // );
+
+    let wall_plane = create_scene_object(
+        create_plane(8.0, 8.0, 2, 2),
+        materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
+        Vector::vec3(0.0, -0.5, -3.5),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
+    );
+
+    let scene_objects = vec![wall_plane];
+
+    let blue = Vector::vec3(0.30, 0.55, 0.68);
+    let orange = Vector::vec3(0.83, 0.53, 0.33);
+    let green = Vector::vec3(0.6, 0.87, 0.59);
+    let red = Vector::vec3(0.82, 0.5, 0.5);
+
+    let point_light1 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(-0.75, 0.95, -2.8), 50.0, orange, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.02, 16));
+    let point_light2 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(-0.3, 0.95, -2.8), 50.0, blue, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.04, 16));
+    let point_light3 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.3, 0.95, -2.8), 50.0, green, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.08, 16));
+    let point_light4 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.75, 0.95, -2.8), 50.0, red, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.16, 16));
+
+    let lights = vec![point_light1, point_light2, point_light3, point_light4];
+
+    let bvh_res = build_bvh(&scene_objects);
+    let bvh = bvh_res.0;
+    let indices = bvh_res.1;
+    let camera = Camera::new(Vector::vec3(0.0, 0.5, 0.0), Vector::vec3(0.0, 0.5, -1.0));
+
+    let scene = SceneData {
+        bvh: bvh,
+        object_indices: indices,
+        scene_objects: scene_objects,
+        lights: lights,
+        camera: camera
+    };
+
+    scene    
 }
 
 pub fn gi_test() -> SceneData {
