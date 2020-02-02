@@ -18,6 +18,7 @@ use std::{f32, f32::consts, fmt};
 use image;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::UnsafeCell;
+use math::clamp;
 
 pub struct UnsafeRgbaImage(UnsafeCell<image::RgbImage>);
 
@@ -90,17 +91,17 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 3, 0, 0, 1, Vector::vec3(0.86, 0.92, 1.0));
-    // let settings = RenderSettings::new(1280, 720, 3, 0, 0, 1, Vector::vec3(0.1, 0.1, 0.1));
+    // let settings = RenderSettings::new(1280, 720, 3, 3, 3, 3, Vector::vec3(0.86, 0.92, 1.0));
+    let settings = RenderSettings::new(720, 720, 3, 3, 3, 8, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = spehres();
+    let scene = gi_test();
  
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
 
-    let y_divisions = 20;
-    let x_divisions = 20;
+    let y_divisions = 40;
+    let x_divisions = 40;
 
     let mut thread_info = Vec::new();
 
@@ -168,8 +169,9 @@ fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSet
             }
 
             color /= sample_points.len() as f32;
-            color *= 255.0;
-            buffer.put_pixel(x, y, image::Rgb([color.x() as u8, color.y() as u8, color.z() as u8]));
+            let output = color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0)) * 255.0;
+            let (r, g, b, a) = output.into();
+            buffer.put_pixel(x, y, image::Rgb([r as u8, g as u8, b as u8]));
         }
     }
 }
