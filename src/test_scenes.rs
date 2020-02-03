@@ -13,7 +13,7 @@ use std::f32::consts;
 use std::time::Instant;
 
 pub fn multi_spheres() -> SceneData {
-    let diffuse = Vector::vec3(0.01, 0.01, 0.01);
+    let diffuse = Vector::vec3(0.0, 0.0, 0.0);
     let specular = Vector::vec3(1.0, 0.782, 0.344);
 
     let sphere1 = create_scene_object(
@@ -90,7 +90,7 @@ pub fn multi_spheres() -> SceneData {
    
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        materials::Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
+        materials::Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.38, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -496,7 +496,7 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(black, silver_spec, 0.38, 1.0, 0.0, 0.0),
+        materials::Material::new(black, silver_spec, 0.45, 1.0, 0.0, 1.0),
         Vector::vec3(-0.5, -0.8, -3.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -556,7 +556,7 @@ pub fn gi_test() -> SceneData {
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
 
-    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.9, -3.0), 75.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, -3.0), 45.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.0, -3.0), Vector::vec3(0.0, 0.0, -3.0), 0.75, 0.75, 10, 20.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![point_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));

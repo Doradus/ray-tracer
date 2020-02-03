@@ -214,9 +214,9 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     let sample_rec = sample_rectangle_uniform(rand1, rand2, &light.rec);
                     let world_pos = sample_rec.0 * world; 
 
-                    let mut l = world_pos - data.position;
-                    let distance = l.vec3_length_f32();
-                    l /= distance;  
+                    let l = (world_pos - data.position).vec3_normalize();
+                    // let distance = l.vec3_length_f32();
+                    // l /= distance;  
 
                     let v = -dir;
                     let origin = data.position + data.normal * 0.0001;
@@ -244,19 +244,16 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     let sample = importance_sample_ggx(rand1, rand2, a2);
         
                     let h = (sample.0 * tbn).vec3_normalize();
-                    let l = (h * 2.0 * v.vec3_dot(h)) - v;
-    
-                    let pdf = sample.1;
-    
-                    let n_o_v = n.vec3_dot_f32(v).abs();
-                    let n_o_l = clamp(n.vec3_dot_f32(l), 0.0, 1.0);            
+                    let l = ((h * 2.0 * v.vec3_dot(h)) - v).vec3_normalize();       
     
                     hit = Vector::vec3(0.0, 0.0, 0.0);
                     if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut hit) {
                         let distance = (data.position - hit).vec3_length_f32();
                         match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
                             None => {
-                                let light_color = light.intensity();
+                                let falloff = distance * distance;
+
+                                let light_color = light.intensity() / falloff;
 
                                 let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
                                 let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
@@ -294,11 +291,10 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let a2 = roughness * roughness;
 
     let h =  (v + l).vec3_normalize();
-    let dot_nv = n.vec3_dot_f32(v).abs();
     let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
     let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
     let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
-    let ga = (0.5 + roughness / 2.0).powi(2);
+    // let ga = (0.5 + roughness / 2.0).powi(2);
 
     let f = schlick_fresnel_aprx(dot_lh, specular_color);
     let d = ggx_distribution(dot_nh, a2);
@@ -364,8 +360,8 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             let light_color = cast_ray(data.position + l * 0.0001, l, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats);
 
             let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, l.vec3_dot_f32(h));
-            let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
-            let dot_vh = clamp(v.vec3_dot_f32(h), 0.0, 1.0);
+            // let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+            // let dot_vh = clamp(v.vec3_dot_f32(h), 0.0, 1.0);
 
             let ga = (0.5 + data.material.roughness / 2.0).powi(2);
             let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
@@ -375,10 +371,10 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             // let pdf_spec = (dot_nh) / (4.0 * dot_lh);
 
             // let weight = f * g * d;
-            let weight = (f * g * (v.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(h).abs());
-            let res = weight * light_color;
+            let weight = ((v.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(h).abs());
+            let reflectance = f * g * weight * light_color;
 
-            *specular += res;
+            *specular += reflectance;
         }
     
         *specular /= samples as f32;
