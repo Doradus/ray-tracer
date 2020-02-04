@@ -5,7 +5,7 @@ mod brdf;
 mod monte_carlo;
 
 use self::materials::Material;
-use self::lights::Lights;
+use self::lights::*;
 use self::brdf::*;
 use self::monte_carlo::*;
 
@@ -68,123 +68,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                         _ => ()
                     }
                 } else {
-                    let beta = 1;
-                    let mut light_diffuse = Vector::vec3(0.0, 0.0, 0.0);
-                    let mut light_spec = Vector::vec3(0.0, 0.0, 0.0);
-                    
-                    //create coords
-                    let mut w = light.position - data.position;
-                    let distance = w.vec3_length_f32();
-                    w /= distance;
-
-                    let (v, u) = create_orthonormal_coordinate_system(w);
-
-                    let to_world = Matrix::from_vector(
-                        v, w, u, Vector::vec4(0.0, 0.0, 0.0, 1.0)
-                    );
-
-                    let mut samples = light.samples;
-
-                    let n = data.normal;
-                    let (t, b) = create_orthonormal_coordinate_system(n);
-                
-                    let tbn = Matrix::from_vector(
-                        t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
-                    );
-
-                    if ray_type != RayType::CameraRay {
-                        samples = 1;
-                    }
-
-                    let x = light.radius / distance;
-                    let r = (1.0 - x * x).sqrt();
-
-                    let a2 = data.material.roughness * data.material.roughness;
-
-                    for _ in 0..samples {
-                        let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
-                        let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
-
-                        let phi = 2.0 * consts::PI * rand1;
-                        let theta = (1.0 - rand2 + rand2 * r).acos();
-
-                        let cos_theta = theta.cos();
-                        let sin_theta = theta.sin();
-
-                        let x = sin_theta * phi.cos();
-                        let z = sin_theta * phi.sin();
-                    
-                        let l = Vector::vec3(x, cos_theta, z) * to_world;
-                        let origin = data.position + data.normal * 0.0001;
-                        let hit = &mut Vector::vec3(0.0, 0.0, 0.0);
-
-                        if intersect_sphere(light.position, light.radius * light.radius, origin, l.vec3_normalize(), hit) {
-                            let dist = (*hit - data.position).vec3_length_f32();
-
-                            match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                                None => {        
-                                    let falloff = dist * dist;
-        
-                                    let mut sample_diffuse = Vector::vec3(0.0, 0.0, 0.0);
-                                    let mut sample_spec = Vector::vec3(0.0, 0.0, 0.0); 
-        
-                                    compute_lighting(data.material.roughness, data.material.specular, data.normal, -dir, l, falloff, light.intensity(), &mut sample_diffuse, &mut sample_spec);
-        
-                                    let pdf = 1.0 / (consts::PI * (1.0 - r));
-                                    let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
-                                    let d = a2 / (consts::PI * d * d);
-                                    let ggx_pdf = d * cos_theta;
-                                    
-                                    let combined_pdf = pdf.powi(beta) + ggx_pdf.powi(beta);
-
-                                    // light_diffuse += sample_diffuse / pdf; 
-                                    // light_spec += sample_spec / pdf;     
-
-                                    light_spec += (sample_spec * pdf.powi(beta)) / (combined_pdf * pdf);
-                                },
-                                _ => ()
-                            }
-                        }
-
-                        let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
-            
-                        let spec_v = -dir;
-                        let h = (sample * tbn).vec3_normalize();
-                        let l_spec = (h * 2.0 * spec_v.vec3_dot(h)) - spec_v;
-        
-                        let n_o_v = n.vec3_dot_f32(spec_v).abs();
-                        let n_o_l = clamp(n.vec3_dot_f32(l_spec), 0.0, 1.0);            
-        
-                        let spec_hit = &mut Vector::vec3(0.0, 0.0, 0.0);
-                        if intersect_sphere(light.position, light.radius * light.radius, origin, l_spec.vec3_normalize(), spec_hit) {
-                            let dist = (*spec_hit - data.position).vec3_length_f32();
-
-                            match trace(origin, l_spec, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                                None => {
-                                    let light_color = light.intensity() * (1.0 / (dist * dist));
-    
-                                    let l_o_h = clamp(l_spec.vec3_dot_f32(h), 0.0, 1.0);
-                                    let n_o_h = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
-                        
-                                    let f = schlick_fresnel_aprx(l_o_h, data.material.specular);
-                                    let d = ggx_distribution(n_o_h, a2);
-                                    let g = smith_for_ggx(n_o_l, n_o_v, a2);
-                                    let sample_spec = f * d * g * light_color * n_o_l;
-                        
-                                    let solid_angle_pdf = 1.0 / (consts::PI * (1.0 - r));
-                                    let combined_pdf = pdf.powi(beta) + solid_angle_pdf.powi(beta);
-
-                                    // light_spec += sample_spec / pdf;   
-                                    light_spec += (sample_spec * pdf.powi(beta)) / (combined_pdf * pdf);
-                                },
-                                _ => ()
-                            }
-                        }
-                    }
-
-                    light_diffuse *= 1.0 / (samples as f32);
-                    light_spec *= 1.0 / (samples as f32 * 2.0);
-
+                    let (light_diffuse, light_spec) = integrate_spherical_light(&light, &data, -dir, scene, current_ray_depth, settings, ray_type, stats) ;
                     diffuse += light_diffuse;
                     specular += light_spec;
                 }
@@ -287,6 +171,77 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
     // color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0))
 }
 
+fn integrate_spherical_light(light: &SphericalLight, data: &ShadingData, dir: Vector, scene: &SceneData, current_ray_depth: u32, settings: RenderSettings, ray_type: RayType, stats: & mut Stats) -> (Vector, Vector) {
+    let mut light_diffuse = Vector::vec3(0.0, 0.0, 0.0);
+    let mut light_spec = Vector::vec3(0.0, 0.0, 0.0);
+
+    let mut samples = light.samples;
+    let sampling_strats_diffuse = 1;
+
+    let n =  data.normal;
+
+    if ray_type != RayType::CameraRay {
+        samples = 1;
+    }
+    
+    //create coords
+    let mut w = light.position - data.position;
+    let distance = w.vec3_length_f32();
+    w /= distance;
+    let (v, u) = create_orthonormal_coordinate_system(w);
+
+    let to_world = Matrix::from_vector(
+        v, w, u, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+    );
+
+    let r = light.radius / distance;
+    let q = (1.0 - r * r).sqrt();
+
+    for _ in 0..samples {
+        //sample diffuse and specular via solid angle
+        let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
+        let rand2 = rand::thread_rng().gen_range(0.0, 1.0);
+    
+        let l = sample_solid_angle_of_sphere(rand1, rand2, q) * to_world;
+        let origin = data.position + data.normal * 0.0001;
+        let hit = &mut Vector::vec3(0.0, 0.0, 0.0);
+
+        if intersect_sphere(light.position, light.radius * light.radius, origin, l.vec3_normalize(), hit) {
+            let dist = (*hit - data.position).vec3_length_f32();
+
+            match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                None => {        
+                    let falloff = dist * dist;
+
+                    let h =  (dir + l).vec3_normalize();
+                    let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+                    let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
+                    let dot_nv = clamp(n.vec3_dot_f32(dir), 0.0, 1.0);
+
+                    let sample_diffuse = compute_diffuse(dot_nv, dot_nl, dot_nh, data.material.roughness, falloff, light.intensity());
+
+                    let pdf = 1.0 / (consts::PI * (1.0 - q));
+                    light_diffuse += sample_diffuse / pdf; 
+                },
+                _ => ()
+            }
+        }
+    }
+    
+    light_diffuse *= 1.0 / (samples * sampling_strats_diffuse) as f32;
+
+    //sample brdf - diffuse
+
+    //sample brdf - specular
+
+    (light_diffuse, light_spec)
+}
+
+fn compute_diffuse(dot_nv: f32, dot_nl: f32, dot_nh: f32, roughness: f32, falloff: f32, light_intensity: Vector) -> Vector {
+    let energy = (light_intensity / falloff) * dot_nl;
+    energy * disney_diffuse_model(dot_nv, dot_nl, dot_nh, roughness)
+}
+
 fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector, l: Vector, falloff: f32, light_intensity: Vector, diffuse: &mut Vector, specular: &mut Vector) {
     let a2 = roughness * roughness;
 
@@ -363,7 +318,7 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             // let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
             // let dot_vh = clamp(v.vec3_dot_f32(h), 0.0, 1.0);
 
-            let ga = (0.5 + data.material.roughness / 2.0).powi(2);
+            // let ga = (0.5 + data.material.roughness / 2.0).powi(2);
             let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
             // let d = ggx_distribution(dot_nh, a2);
             let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);

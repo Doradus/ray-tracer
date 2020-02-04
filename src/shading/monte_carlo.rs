@@ -61,3 +61,17 @@ pub(crate) fn sample_rectangle_uniform(rand1: f32, rand2: f32, rec: &Rectangle) 
 
     (Vector::vec3(x, y, 0.0), rec.area())
 }
+
+#[inline]
+pub(crate) fn sample_solid_angle_of_sphere(rand1: f32, rand2: f32, q: f32) -> Vector {
+    let phi = 2.0 * consts::PI * rand1;
+    let theta = (1.0 - rand2 + rand2 * q).acos();
+
+    let cos_theta = theta.cos();
+    let sin_theta = theta.sin();
+
+    let x = sin_theta * phi.cos();
+    let z = sin_theta * phi.sin();
+
+    Vector::vec3(x, cos_theta, z)
+}
