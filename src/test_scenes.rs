@@ -169,11 +169,14 @@ pub fn area_ligt() -> SceneData {
     let color = Vector::vec3(0.7, 0.7, 0.7);
     let sphere_color = Vector::vec3(0.8, 0.8, 0.8);
 
-    let roughness = 0.1;
+    let roughness1 = 0.2;
+    let roughness2 = 0.4;
+    let roughness3 = 0.6;
+
 
     let sphere1 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness, 1.0, 0.0, 0.0),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness1, 1.0, 0.0, 0.0),
         Vector::vec3(-0.42, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -181,7 +184,7 @@ pub fn area_ligt() -> SceneData {
 
     let sphere2 = create_scene_object(
         create_sphere(0.4, 40, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness, 1.0, 0.0, 0.0),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness2, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -189,7 +192,7 @@ pub fn area_ligt() -> SceneData {
 
     let sphere3 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness, 1.0, 0.0, 0.0),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness3, 1.0, 0.0, 0.0),
         Vector::vec3(0.42, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -197,7 +200,7 @@ pub fn area_ligt() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(color, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -255,7 +258,7 @@ pub fn area_ligt() -> SceneData {
     let point_light_50 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 50.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.5, 10));
     let point_light_75 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 15.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.75, 10));
 
-    let lights = vec![point_light_50];
+    let lights = vec![point_light_75];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;

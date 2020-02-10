@@ -44,12 +44,12 @@ pub(crate) fn importance_sample_ggx(rand1: f32, rand2:f32, roughness: f32) -> (V
 	let x = sin_theta * phi.cos();
 	let z = sin_theta * phi.sin();
 	
-	// let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
-	// let d = a2 / (consts::PI * d * d);
-    // let pdf = d * cos_theta;
+	let d = (cos_theta * a2 - cos_theta) * cos_theta + 1.0;
+	let d = a2 / (consts::PI * d * d);
+    let pdf = d * cos_theta;
     
-    let d = (a2 - 1.0) * (cos_theta * cos_theta) + 1.0;
-    let pdf = (2.0 * a2 * cos_theta * sin_theta) / (d * d);
+    // let d = (a2 - 1.0) * (cos_theta * cos_theta) + 1.0;
+    // let pdf = (2.0 * a2 * cos_theta * sin_theta) / (d * d);
 
     (Vector::vec3(x, cos_theta, z), pdf)
 }
