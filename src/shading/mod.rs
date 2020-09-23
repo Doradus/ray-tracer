@@ -198,11 +198,11 @@ fn integrate_spherical_light(light: &SphericalLight, data: &ShadingData, view: V
     let q = (1.0 - r * r).sqrt();
 
     //tbn 
-    let (t, b) = create_orthonormal_coordinate_system(n);
+    // let (t, b) = create_orthonormal_coordinate_system(n);
     
-    let tbn = Matrix::from_vector(
-        t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
-    );
+    // let tbn = Matrix::from_vector(
+    //     t, n, b, Vector::vec4(0.0, 0.0, 0.0, 1.0)
+    // );
 
     for _ in 0..samples {
         let rand1 = rand::thread_rng().gen_range(0.0, 1.0);
@@ -231,7 +231,7 @@ fn integrate_spherical_light(light: &SphericalLight, data: &ShadingData, view: V
 
                     let pdf = 1.0 / (consts::PI * (1.0 - q));
                     
-                    // light_diffuse += sample_diffuse / pdf; 
+                    light_diffuse += sample_diffuse / pdf; 
                     light_spec += sample_spec / pdf;
                 },
                 _ => ()
@@ -239,39 +239,45 @@ fn integrate_spherical_light(light: &SphericalLight, data: &ShadingData, view: V
         }
 
         //sample brdf - specular
-        let a2 = data.material.roughness * data.material.roughness;
-        let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
+        // let a2 = data.material.roughness * data.material.roughness;
+        // let (sample, pdf) = importance_sample_ggx(rand1, rand2, a2);
 
-        let h = (sample * tbn).vec3_normalize();
-        let l = ((h * 2.0 * view.vec3_dot(h)) - view).vec3_normalize();
-        let origin = data.position + l * 0.0001;
-        let hit = &mut Vector::vec3(0.0, 0.0, 0.0);
+        // let h = (sample * tbn).vec3_normalize();
+        // let l = ((h * 2.0 * view.vec3_dot(h)) - view).vec3_normalize();
+        // let origin = data.position + l * 0.0001;
+        // let hit = &mut Vector::vec3(0.0, 0.0, 0.0);
 
-        let dot_nv = n.vec3_dot_f32(v).abs();
-        let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
+        // let dot_nv = clamp(n.vec3_dot_f32(view), 0.0, 1.0);
+        // let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
 
-        if dot_nv == 0.0 || dot_nl == 0.0 {
-            continue;
-        }
+        // if dot_nv == 0.0 || dot_nl == 0.0 {
+        //     continue;
+        // }
 
-        if intersect_sphere(light.position, light.radius * light.radius, origin, l, hit) {
-            let dist = (*hit - data.position).vec3_length_f32();
+        // if intersect_sphere(light.position, light.radius * light.radius, origin, l, hit) {
+        //     let dist = (*hit - data.position).vec3_length_f32();
 
-            match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
-                None => {        
-                    let falloff = 1.0 / (dist * dist);
+        //     match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, dist, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+        //         None => {        
+        //             let falloff = 1.0 / (dist * dist);
 
-                    let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, l.vec3_dot_f32(h));
-                    let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
-                    let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, view, a2);
-                    let weight = ((view.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(view).abs() * n.vec3_dot_f32(h).abs());
-                    let reflectance = f * g * weight * falloff * light.intensity();
+        //             let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, l.vec3_dot_f32(h));
+        //             let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
+        //             let d = ggx_distribution(n.vec3_dot_f32(h), a2);
+        //             let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, view, a2);
+        
+        //             let pdf = (d * n.vec3_dot_f32(h)) / (4.0 * view.vec3_dot_f32(h).abs());
+        //             let brdf = (f * d * g * n.vec3_dot_f32(l).abs()) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(view).abs());
+        //             let reflectance = (brdf / pdf) * falloff * light.intensity();
+                  
+        //             // let weight = ((view.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(view).abs() * n.vec3_dot_f32(h).abs());
+        //             // let reflectance = f * g * weight * falloff * light.intensity();
             
-                    // light_spec += reflectance;
-                },
-                _ => ()
-            }
-        }
+        //             // light_spec += reflectance;
+        //         },
+        //         _ => ()
+        //     }
+        // }
     }
     
     light_diffuse *= 1.0 / samples as f32;
@@ -368,22 +374,21 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
 
             let light_color = cast_ray(data.position + l * 0.0001, l, scene, current_ray_depth + 1, settings, RayType::SpecularRay, stats);
 
-            let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, l.vec3_dot_f32(h));
-            // let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
+            let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
+            let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
             // let dot_vh = clamp(v.vec3_dot_f32(h), 0.0, 1.0);
 
             // let ga = (0.5 + data.material.roughness / 2.0).powi(2);
             let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
-            // let d = ggx_distribution(dot_nh, a2);
+            let d = ggx_distribution(n.vec3_dot_f32(h), a2);
             let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
 
-            // let pdf_spec = (dot_nh) / (4.0 * dot_lh);
+            let pdf = (d * n.vec3_dot_f32(h)) / (4.0 * v.vec3_dot_f32(h).abs());
+            let brdf = (f * d * g * n.vec3_dot_f32(l).abs()) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
+            let reflectance = (brdf / pdf) * light_color;
 
-            // let weight = (f * g * d) / (4.0 * n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(l).abs()) * dot_nl;
-            // let reflectance = (weight * light_color) / pdf;
-
-            let weight = ((v.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(h).abs());
-            let reflectance = f * g * weight * light_color;
+            // let weight = ((v.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(h).abs());
+            // let reflectance = f * g * weight * light_color;
 
             *specular += reflectance;
         }

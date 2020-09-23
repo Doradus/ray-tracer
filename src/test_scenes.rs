@@ -258,7 +258,7 @@ pub fn area_ligt() -> SceneData {
     let point_light_50 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 50.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.5, 10));
     let point_light_75 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 15.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.75, 10));
 
-    let lights = vec![point_light_75];
+    let lights = vec![point_light_25];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;
@@ -566,7 +566,7 @@ pub fn gi_test() -> SceneData {
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
 
-    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, -3.0), 45.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.65, -3.0), 700.0, Vector::vec3(1.0, 0.94, 0.87), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.05, 10));
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.0, -3.0), Vector::vec3(0.0, 0.0, -3.0), 0.75, 0.75, 10, 20.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![point_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
