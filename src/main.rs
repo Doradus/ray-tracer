@@ -91,9 +91,9 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    // let settings = RenderSettings::new(1280, 720, 3, 3, 3, 3, Vector::vec3(0.86, 0.92, 1.0));
-    let settings = RenderSettings::new(720, 720, 3, 9, 9, 8, Vector::vec3(0.0, 0.0, 0.0));
-    // let settings = RenderSettings::new(1280, 720, 1, 0, 0, 3, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(1280, 720, 2, 3, 0, 8, Vector::vec3(0.0, 0.0, 0.0));
+    // let settings = RenderSettings::new(1280, 720, 3, 3, 3, 8, Vector::vec3(0.0, 0.0, 0.0));
+    //let settings = RenderSettings::new(1280, 720, 3, 8, 8, 8, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
@@ -109,13 +109,23 @@ fn main() {
     let cell_width = settings.width / x_divisions;
     let cell_height = settings.height / y_divisions; 
 
-    for y in 0..x_divisions as u32 {
-        for x in 0..x_divisions as u32 {
-            thread_info.push(RenderThreadInfo {offset: (x * cell_width, y * cell_height), dimensions: (cell_width, cell_height)});
+    // for y in 0..y_divisions as u32 {
+    //     for x in 0..x_divisions as u32 {
+    //         thread_info.push(RenderThreadInfo {offset: (x * cell_width, y * cell_height), dimensions: (cell_width, cell_height)});
+    //     }
+    // }
+
+    for y in 0..settings.height as u32 {
+        for x in 0..settings.width as u32 {
+            thread_info.push(Vector::vec2(x as f32, y as f32));
         }
     }
 
-    let num_render_jobs = x_divisions * y_divisions;
+    println!("thread_info: {}", thread_info.len());
+
+    let num_render_jobs = settings.width * settings.height;
+    // let num_render_jobs = x_divisions * y_divisions;
+
     let render_job_counter = AtomicUsize::new(0);
     let threads_spawned = AtomicUsize::new(0);
 
@@ -146,7 +156,7 @@ fn main() {
     write_to_file(&buffer);
 }
 
-fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
+fn render(info: Vector, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
     let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
     let aspect_ratio = settings.width as f32 / settings.height as f32;
     let fov = 40.0 * (consts::PI / 180.0); 
@@ -154,28 +164,55 @@ fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSet
     let scale = (fov * 0.5).tan();
     let a = aspect_ratio * scale;
 
-    let end_x = info.dimensions.0 + info.offset.0;
-    let end_y = info.dimensions.1 + info.offset.1;
-    for x in info.offset.0..end_x {
-        for y in info.offset.1..end_y {
+    let x = info.x();
+    let y = info.y();
 
-            let mut color = Vector::vec3(0.0, 0.0, 0.0);
-            let sample_points = get_aa_distribution(settings.aa_samples);
-            for i in 0..sample_points.len() {
-                let p_x = (2.0 * (x as f32 + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
-                let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
-                let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
-                let ray_dir = dir - origin;
-                color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
-            }
-
-            color /= sample_points.len() as f32;
-            let output = color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0)) * 255.0;
-            let (r, g, b, a) = output.into();
-            buffer.put_pixel(x, y, image::Rgb([r as u8, g as u8, b as u8]));
-        }
+    let mut color = Vector::vec3(0.0, 0.0, 0.0);
+    let sample_points = get_aa_distribution(settings.aa_samples);
+    for i in 0..sample_points.len() {
+        let p_x = (2.0 * (x + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
+        let p_y = (1.0 - 2.0 * (y + sample_points[i].1) / settings.height as f32) * scale; 
+        let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
+        let ray_dir = dir - origin;
+        color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
     }
+
+    color /= sample_points.len() as f32;
+    let output = color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0)) * 255.0;
+    let (r, g, b, a2) = output.into();
+    buffer.put_pixel(x as u32, y as u32, image::Rgb([r as u8, g as u8, b as u8]));
 }
+
+// fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
+//     let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
+//     let aspect_ratio = settings.width as f32 / settings.height as f32;
+//     let fov = 40.0 * (consts::PI / 180.0); 
+
+//     let scale = (fov * 0.5).tan();
+//     let a = aspect_ratio * scale;
+
+//     let end_x = info.dimensions.0 + info.offset.0;
+//     let end_y = info.dimensions.1 + info.offset.1;
+//     for x in info.offset.0..end_x {
+//         for y in info.offset.1..end_y {
+
+//             let mut color = Vector::vec3(0.0, 0.0, 0.0);
+//             let sample_points = get_aa_distribution(settings.aa_samples);
+//             for i in 0..sample_points.len() {
+//                 let p_x = (2.0 * (x as f32 + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
+//                 let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
+//                 let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
+//                 let ray_dir = dir - origin;
+//                 color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
+//             }
+
+//             color /= sample_points.len() as f32;
+//             let output = color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0)) * 255.0;
+//             let (r, g, b, a) = output.into();
+//             buffer.put_pixel(x, y, image::Rgb([r as u8, g as u8, b as u8]));
+//         }
+//     }
+// }
 
 fn get_aa_distribution(samples: u32) -> Vec<(f32, f32)> {
     let mut sample_pos = Vec::new();

@@ -403,7 +403,7 @@ fn compute_indirect_diffuse(data: &ShadingData, scene: &SceneData, current_ray_d
         let n = data.normal;
 
         if current_ray_depth > 0 {
-            samples = (settings.diffuse_samples as f32).sqrt() as u32;
+            samples = 1;
         }
 
         for _ in 0..samples {

@@ -514,7 +514,7 @@ pub fn gi_test() -> SceneData {
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -1.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -522,7 +522,7 @@ pub fn gi_test() -> SceneData {
 
     let top_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 1.1, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(180.0), 0.0, 0.0)
@@ -530,7 +530,7 @@ pub fn gi_test() -> SceneData {
 
     let left_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(red, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(red, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(-1.2, -1.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(90.0), 0.0)
@@ -538,7 +538,7 @@ pub fn gi_test() -> SceneData {
 
     let right_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(green, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(green, Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
         Vector::vec3(1.2, -1.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(270.0), 0.0)
@@ -546,7 +546,7 @@ pub fn gi_test() -> SceneData {
 
     let wall_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -6.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
@@ -554,20 +554,20 @@ pub fn gi_test() -> SceneData {
 
     let back_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, 1.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(180.0), 0.0)
     );
 
-    let scene_objects = vec![cube_green, sphere, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane];
+    let scene_objects = vec![cube_green, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
 
-    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.65, -3.0), 700.0, Vector::vec3(1.0, 0.94, 0.87), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.05, 10));
-    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.0, -3.0), Vector::vec3(0.0, 0.0, -3.0), 0.75, 0.75, 10, 20.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.4, -3.0), 35.0, Vector::vec3(1.0, 0.94, 0.87), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 10));
+    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 0.95, -1.0), Vector::vec3(0.0, 0.0, -3.0), 0.2, 0.2, 12, 0.05, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
     let lights = vec![point_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
 
