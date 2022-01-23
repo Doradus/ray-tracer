@@ -358,9 +358,9 @@ impl BoundingBox {
         let max = (Vector::vec3(self.bounds[1 - sign_x].x(), self.bounds[1 - sign_y].y(), self.bounds[1 - sign_z].z()) - ray_origin) * inv_ray_dir;
 
         let mut t_min = min.x();
-        let mut t_max = max.x();
-
         let t_y_min = min.y();
+
+        let mut t_max = max.x();
         let t_y_max = max.y();
 
         if (t_min > t_y_max) || (t_y_min > t_max) {
@@ -462,37 +462,40 @@ impl BoundingSpehere {
         self.radius_sqrd = radius * radius;
     }
 
-    pub fn intersect(&self, ray_origin: Vector, ray_dir: Vector) -> bool {
-        let l = self.position - ray_origin;
 
-        let tca = l.vec3_dot_f32(ray_dir);
+}
 
-        if tca < 0.0 {
-            return false;
-        }
+pub fn intersect_sphere(position: Vector, radius_sqrd: f32, ray_origin: Vector, ray_dir: Vector, hit_at: &mut Vector) -> bool {
+    let l = position - ray_origin;
 
-        let d2 = l.vec3_dot_f32(l) - tca * tca;
+    let tca = l.vec3_dot_f32(ray_dir);
 
-        if d2 > self.radius_sqrd {
-            return false;            
-        }
-
-        let mut t0;
-        let t1;
-
-        let thc = (self.radius_sqrd - d2).sqrt(); 
-        t0 = tca - thc; 
-        t1 = tca + thc; 
-
-        if t0 < 0.0 { 
-            t0 = t1;
-            if t0 < 0.0 {
-                return false;                 
-            } 
-        }
-
-        true
+    if tca < 0.0 {
+        return false;
     }
+
+    let d2 = l.vec3_dot_f32(l) - tca * tca;
+
+    if d2 > radius_sqrd {
+        return false;            
+    }
+
+    let mut t0;
+    let t1;
+
+    let thc = (radius_sqrd - d2).sqrt(); 
+    t0 = tca - thc; 
+    t1 = tca + thc; 
+
+    if t0 < 0.0 { 
+        t0 = t1;
+        if t0 < 0.0 {
+            return false;                 
+        } 
+    }
+
+    *hit_at = ray_origin + ray_dir * t0;
+    true
 }
 
 pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal: Vector, v1: Vector, v2: Vector, hit_at: &mut Vector) -> bool {
@@ -504,8 +507,8 @@ pub fn intersect_plane(ray_origin: Vector, ray_dir: Vector, pos: Vector, normal:
         let t = dist.vec3_dot_f32(normal) / denom;
 
         if t > 0.0 { 
-            let hit_at = ray_origin + ray_dir * t;
-            let diff = hit_at - pos; 
+            *hit_at = ray_origin + ray_dir * t;
+            let diff = *hit_at - pos; 
 
             let q1 = v1.vec3_dot_f32(diff);
             let q2 = v2.vec3_dot_f32(diff);

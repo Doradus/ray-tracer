@@ -13,7 +13,7 @@ use std::f32::consts;
 use std::time::Instant;
 
 pub fn multi_spheres() -> SceneData {
-    let diffuse = Vector::vec3(0.01, 0.01, 0.01);
+    let diffuse = Vector::vec3(0.0, 0.0, 0.0);
     let specular = Vector::vec3(1.0, 0.782, 0.344);
 
     let sphere1 = create_scene_object(
@@ -90,7 +90,7 @@ pub fn multi_spheres() -> SceneData {
    
     let plane = create_scene_object(
         create_plane(8.0, 8.0, 5, 5),
-        materials::Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
+        materials::Material::new(Vector::vec3(0.4, 0.4, 0.4), Vector::vec3(0.04, 0.04, 0.04), 0.38, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -169,33 +169,38 @@ pub fn area_ligt() -> SceneData {
     let color = Vector::vec3(0.7, 0.7, 0.7);
     let sphere_color = Vector::vec3(0.8, 0.8, 0.8);
 
+    let roughness1 = 0.2;
+    let roughness2 = 0.4;
+    let roughness3 = 0.6;
+
+
     let sphere1 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(-0.42, -0.3, -1.4),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness1, 1.0, 0.0, 0.0),
+        Vector::vec3(-0.42, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let sphere2 = create_scene_object(
         create_sphere(0.4, 40, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(0.0, -0.3, -1.4),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness2, 1.0, 0.0, 0.0),
+        Vector::vec3(0.0, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let sphere3 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
-        Vector::vec3(0.42, -0.3, -1.4),
+        materials::Material::new(sphere_color, Vector::vec3(0.04, 0.04, 0.04), roughness3, 1.0, 0.0, 0.0),
+        Vector::vec3(0.42, -0.3, -1.6),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(color, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(color, Vector::vec3(0.04, 0.04, 0.04), 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -241,19 +246,24 @@ pub fn area_ligt() -> SceneData {
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(180.0), 0.0)
     );
 
-    let scene_objects = vec![top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane, sphere2];
+    let scene_objects = vec![bottom_plane, wall_plane, sphere1, sphere2, sphere3];
 
     // let point_light = Lights::Point(PointLight::new(Vector::vec3(0.3, 1.0, -1.5), 1.0, Vector::vec3(1.0, 1.0, 1.0), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
     // let lights = vec![point_light];
 
     let directional_light = lights::Lights::Directional(lights::DirectionalLight::new(Vector::vec3(-0.0, -0.6, -0.8), 1.5, Vector::vec3(1.0, 1.0, 1.0)));
-    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.42, -0.3, -1.4), 1.45, 0.5, 9, 20.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let lights = vec![rec_light];
+    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.42, -0.3, -1.4), 1.45, 0.25, 9, 20.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
+  
+    let point_light_25 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 200.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.25, 10));
+    let point_light_50 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 50.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.5, 10));
+    let point_light_75 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.75, 0.0), 15.0, Vector::vec3(1.0, 0.945, 0.878), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.75, 10));
+
+    let lights = vec![point_light_25];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
-    let camera = Camera::new(Vector::vec3(-0.6, 0.25, -1.4), Vector::vec3(0.0, -0.3, -1.4));
+    let camera = Camera::new(Vector::vec3(0.0, 0.4, 0.0), Vector::vec3(0.0, -0.0, -1.0));
 
     let scene = SceneData {
         bvh: bvh,
@@ -277,7 +287,7 @@ pub fn furnance_test() -> SceneData {
 
     let scene_objects = vec![sphere];
 
-    let point_light = lights::Lights::Point(lights::PointLight::new(Vector::vec3(0.3, 1.5, -1.6), 0.0, Vector::vec3(1.0, 0.945, 0.878), 2.0, Vector::vec3(0.0, 0.0, 1.0)));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.3, 1.5, -1.6), 0.0, Vector::vec3(1.0, 0.945, 0.878), 2.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 0));
     let lights = vec![point_light];
 
     let bvh_res = build_bvh(&scene_objects);
@@ -312,6 +322,7 @@ pub fn spehres() -> SceneData {
     let roughness = vec![1.0, 0.65, 0.4, 0.6, 0.7, 0.5, 0.7, 0.35, 0.8, 0.37];
 
     let chrome_spec = Vector::vec3(0.549, 0.556, 0.554);
+    let alum_spec = Vector::vec3(0.913, 0.922, 0.924);
     let silver_spec = Vector::vec3(0.972, 0.960, 0.915);
     let gold_spec = Vector::vec3(1.0, 0.782, 0.344);
 
@@ -326,7 +337,7 @@ pub fn spehres() -> SceneData {
 
     let large_sphere1 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(black, gold_spec, 0.35, 1.0, 0.0, 1.0),
+        materials::Material::new(black, gold_spec, 0.1, 1.0, 0.0, 1.0),
         Vector::vec3(1.0, -0.3, -2.0),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -334,7 +345,7 @@ pub fn spehres() -> SceneData {
 
     let large_sphere2 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(black, silver_spec, 0.3, 1.0, 0.0, 1.0),
+        materials::Material::new(black, alum_spec, 0.1, 1.0, 0.0, 0.0),
         Vector::vec3(-1.2, -0.3, -2.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -342,7 +353,7 @@ pub fn spehres() -> SceneData {
 
     let large_sphere3 = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(Vector::vec3(0.4, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.25, 1.0, 0.0, 0.0),
+        materials::Material::new(black, alum_spec, 0.45, 1.0, 0.0, 0.0),
         Vector::vec3(-1.0, -0.3, -3.0),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -377,6 +388,8 @@ pub fn spehres() -> SceneData {
 
     let directional_light = lights::Lights::Directional(lights::DirectionalLight::new(Vector::vec3(-0.0, -0.6, -1.0), 1.5, Vector::vec3(1.0, 1.0, 1.0)));
     let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.599, -3.0), Vector::vec3(0.0, -1.0, 0.0), 0.75, 0.75, 10, 5.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.5, -2.0), 30.0, Vector::vec3(1.0, 1.0, 1.0), 10.0, Vector::vec3(0.0, 0.0, 1.0), 0.15, 100));
+    
     let lights = vec![directional_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
 
@@ -391,11 +404,85 @@ pub fn spehres() -> SceneData {
     scene
 }
 
+pub fn area_ligt_specular_test() -> SceneData {
+    // let plane1 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.0, -2.0),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(10.0), 0.0, 0.0)
+    // );
+
+    // let plane2 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.2, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.14, -2.5),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(20.0), 0.0, 0.0)
+    // );
+
+    // let plane3 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.36, -3.0),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(30.0), 0.0, 0.0)
+    // );
+
+    // let plane4 = create_scene_object(
+    //     create_plane(2.0, 0.5, 2, 2),
+    //     materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.01, 1.0, 0.0, 0.0),
+    //     Vector::vec3(0.0, 0.66, -3.4),
+    //     Vector::vec3(1.0, 1.0, 1.0),
+    //     Vector::vec3(degree_to_radians(40.0), 0.0, 0.0)
+    // );
+
+    let wall_plane = create_scene_object(
+        create_plane(8.0, 8.0, 2, 2),
+        materials::Material::new(Vector::vec3(0.1, 0.1, 0.1), Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
+        Vector::vec3(0.0, -0.5, -3.5),
+        Vector::vec3(1.0, 1.0, 1.0),
+        Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
+    );
+
+    let scene_objects = vec![wall_plane];
+
+    let blue = Vector::vec3(0.30, 0.55, 0.68);
+    let orange = Vector::vec3(0.83, 0.53, 0.33);
+    let green = Vector::vec3(0.6, 0.87, 0.59);
+    let red = Vector::vec3(0.82, 0.5, 0.5);
+
+    let point_light1 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(-0.75, 0.95, -2.8), 50.0, orange, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.02, 16));
+    let point_light2 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(-0.3, 0.95, -2.8), 50.0, blue, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.04, 16));
+    let point_light3 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.3, 0.95, -2.8), 50.0, green, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.08, 16));
+    let point_light4 = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.75, 0.95, -2.8), 50.0, red, 100.0, Vector::vec3(0.0, 0.0, 1.0), 0.16, 16));
+
+    let lights = vec![point_light1, point_light2, point_light3, point_light4];
+
+    let bvh_res = build_bvh(&scene_objects);
+    let bvh = bvh_res.0;
+    let indices = bvh_res.1;
+    let camera = Camera::new(Vector::vec3(0.0, 0.5, 0.0), Vector::vec3(0.0, 0.5, -1.0));
+
+    let scene = SceneData {
+        bvh: bvh,
+        object_indices: indices,
+        scene_objects: scene_objects,
+        lights: lights,
+        camera: camera
+    };
+
+    scene    
+}
+
 pub fn gi_test() -> SceneData {
     let white = Vector::vec3(0.8, 0.8, 0.8);
     let black = Vector::vec3(0.0, 0.0, 0.0);
     let red = Vector::vec3(0.4, 0.15, 0.15);
     let green = Vector::vec3(0.15, 0.4, 0.1);
+
+    let light_red = Vector::vec3(0.82, 0.6, 0.6);
+    let light_green = Vector::vec3(0.7, 0.82, 0.69);
     
     let silver_spec = Vector::vec3(0.972, 0.960, 0.915);
     let aluminum_spec = Vector::vec3(0.913, 0.922, 0.924);
@@ -419,15 +506,15 @@ pub fn gi_test() -> SceneData {
 
     let sphere = create_scene_object(
         create_sphere(0.4, 20, 20),
-        materials::Material::new(black, aluminum_spec, 0.2, 1.0, 0.0, 1.0),
-        Vector::vec3(-1.2, -0.3, -4.4),
+        materials::Material::new(black, silver_spec, 0.45, 1.0, 0.0, 1.0),
+        Vector::vec3(-0.5, -0.8, -3.4),
         Vector::vec3(0.5, 0.5, 0.5),
         Vector::vec3(0.0, 0.0, 0.0)
     );
 
     let bottom_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.3, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -1.0, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(0.0, 0.0, 0.0)
@@ -435,7 +522,7 @@ pub fn gi_test() -> SceneData {
 
     let top_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 1.1, -4.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(180.0), 0.0, 0.0)
@@ -459,7 +546,7 @@ pub fn gi_test() -> SceneData {
 
     let wall_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, -0.5, -6.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), 0.0, 0.0)
@@ -467,21 +554,21 @@ pub fn gi_test() -> SceneData {
 
     let back_plane = create_scene_object(
         create_plane(8.0, 8.0, 2, 2),
-        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.6, 1.0, 0.0, 0.0),
+        materials::Material::new(white, Vector::vec3(0.04, 0.04, 0.04), 0.4, 1.0, 0.0, 0.0),
         Vector::vec3(0.0, 0.0, 1.0),
         Vector::vec3(1.0, 1.0, 1.0),
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(180.0), 0.0)
     );
 
-    let scene_objects = vec![cube_green, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane];
+    let scene_objects = vec![cube_green, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane, sphere];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;
     let indices = bvh_res.1;
 
-    let point_light = lights::Lights::Point(lights::PointLight::new(Vector::vec3(0.0, 1.099, -3.0), 150.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(0.0, 0.0, 1.0)));
-    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 1.099, -3.0), Vector::vec3(0.0, 0.0, -3.0), 0.75, 0.75, 10, 5.0, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
-    let lights = vec![rec_light];
+    let point_light = lights::Lights::Spherical(lights::SphericalLight::new(Vector::vec3(0.0, 0.4, -3.0), 35.0, Vector::vec3(1.0, 0.94, 0.87), 1.0, Vector::vec3(0.0, 0.0, 1.0), 0.0, 10));
+    let rec_light = lights::Lights::Rectangular(lights::RectangularLight::new(Vector::vec3(0.0, 0.95, -1.0), Vector::vec3(0.0, 0.0, -3.0), 0.2, 0.2, 12, 0.05, Vector::vec3(1.0, 0.945, 0.878), 10.0, Vector::vec3(1.0, 1.0, 1.0)));
+    let lights = vec![point_light];
     let camera = Camera::new(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(0.0, 0.0, -1.0));
 
     let scene = SceneData {
