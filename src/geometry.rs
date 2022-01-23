@@ -358,9 +358,9 @@ impl BoundingBox {
         let max = (Vector::vec3(self.bounds[1 - sign_x].x(), self.bounds[1 - sign_y].y(), self.bounds[1 - sign_z].z()) - ray_origin) * inv_ray_dir;
 
         let mut t_min = min.x();
-        let mut t_max = max.x();
-
         let t_y_min = min.y();
+
+        let mut t_max = max.x();
         let t_y_max = max.y();
 
         if (t_min > t_y_max) || (t_y_min > t_max) {

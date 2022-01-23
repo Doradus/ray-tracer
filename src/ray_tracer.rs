@@ -34,7 +34,8 @@ pub fn cast_ray(origin: Vector, direction: Vector, scene: &SceneData, current_ra
             let normal = (v_0.normal.vec3_normalize() * (1.0 - i.u - i.v) + v_1.normal.vec3_normalize() * i.u + v_2.normal.vec3_normalize() * i.v).vec3_normalize();
             let data = ShadingData::new(position, normal, Vector::vec2(0.0, 0.0), scene.scene_objects[i.mesh_index].material);
 
-            calculate_color(data, direction, scene, current_ray_depth, settings, ray_type, stats)
+           calculate_color(data, direction, scene, current_ray_depth, settings, ray_type, stats)
+            //Vector::vec4(0.0, 0.0, 1.0, 1.0)
         }
     }
 }
@@ -143,6 +144,24 @@ pub fn trace(origin: Vector, direction: Vector, scene_objects: &[SceneObject], n
     //             None => ()
     //         }
     //     }
+
+        // match intersect_mesh(origin, direction, &scene_objects[i].mesh, stats) {
+        //     Some(mesh_result) => {
+        //         if mesh_result.t < closest {
+        //             closest = mesh_result.t;
+
+        //             let result = TraceResult {
+        //                 u: mesh_result.u,
+        //                 v: mesh_result.v,
+        //                 triangle_index: mesh_result.triangle_index,
+        //                 mesh_index: i,
+        //                 t: mesh_result.t
+        //             };
+        //             found = Some(result);
+        //         }
+        //     },
+        //     None => ()
+        // }
     // }
 
     found

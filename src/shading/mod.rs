@@ -42,7 +42,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
         match &lights[i] {
             Lights::Directional(light) => {  
                 let l = -(light.direction.vec3_normalize());
-                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, f32::INFINITY, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, f32::INFINITY, current_ray_depth, settings, RayType::ShadowRay, stats) {
                     None => {
                         let v = -dir;
                         let n = data.normal;
@@ -57,7 +57,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     let mut l = light.position - data.position;
                     let distance = l.vec3_length_f32();
                     l /= distance;      
-                    match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                    match trace(data.position + data.normal * 0.0001, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth , settings, RayType::ShadowRay, stats) {
                         None => {
                             let v = -dir;
                             let n = data.normal;
@@ -109,7 +109,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut hit) {
                         let distance = (data.position - hit).vec3_length_f32();
 
-                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth, settings, RayType::ShadowRay, stats) {
                             None => {        
                                 let falloff = distance * distance;
     
@@ -133,7 +133,7 @@ pub fn calculate_color(data: ShadingData, dir: Vector, scene: &SceneData, curren
                     hit = Vector::vec3(0.0, 0.0, 0.0);
                     if intersect_plane(origin, l, light.s, -light.direction.vec3_normalize(), light.v1, light.v2, &mut hit) {
                         let distance = (data.position - hit).vec3_length_f32();
-                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth + 1, settings, RayType::ShadowRay, stats) {
+                        match trace(origin, l, &scene.scene_objects, &scene.bvh, &scene.object_indices, distance, current_ray_depth, settings, RayType::ShadowRay, stats) {
                             None => {
                                 let falloff = distance * distance;
 
@@ -227,7 +227,7 @@ fn integrate_spherical_light(light: &SphericalLight, data: &ShadingData, view: V
                     let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
 
                     let sample_diffuse = compute_diffuse(dot_nv, dot_nl, dot_nh, data.material.roughness, falloff, light.intensity());
-                    let sample_spec = compute_specular(n, l, view, data.material.specular, dot_lh, dot_nl, dot_nh, data.material.roughness, falloff, light.intensity());
+                    let sample_spec = compute_specular(n, l, view, data.material.specular, dot_lh, dot_nl, dot_nv, dot_nh, data.material.roughness, falloff, light.intensity());
 
                     let pdf = 1.0 / (consts::PI * (1.0 - q));
                     
@@ -291,12 +291,13 @@ fn compute_diffuse(dot_nv: f32, dot_nl: f32, dot_nh: f32, roughness: f32, fallof
     energy * disney_diffuse_model(dot_nv, dot_nl, dot_nh, roughness)
 }
 
-fn compute_specular(n: Vector, l: Vector, v: Vector, specular_color: Vector, dot_lh: f32, dot_nl: f32, dot_nh: f32, roughness: f32, falloff: f32, light_intensity: Vector) -> Vector {
+fn compute_specular(n: Vector, l: Vector, v: Vector, specular_color: Vector, dot_lh: f32, dot_nl: f32, dot_nv: f32, dot_nh: f32, roughness: f32, falloff: f32, light_intensity: Vector) -> Vector {
     let a2 = roughness * roughness;
     let energy = (light_intensity / falloff) * dot_nl;
     let f = schlick_fresnel_aprx(dot_lh, specular_color);
     let d = ggx_distribution(dot_nh, a2);
-    let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+    //let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+    let g = smith_for_ggx(dot_nl, dot_nv, a2);
 
     let brdf = (f * d * g) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
     brdf * energy
@@ -309,11 +310,13 @@ fn compute_lighting(roughness: f32, specular_color: Vector, n: Vector, v: Vector
     let dot_lh = clamp(l.vec3_dot_f32(h), 0.0, 1.0);
     let dot_nh = clamp(n.vec3_dot_f32(h), 0.0, 1.0);
     let dot_nl = clamp(n.vec3_dot_f32(l), 0.0, 1.0);
+    let dot_nv = clamp(n.vec3_dot_f32(v), 0.0, 1.0);
     // let ga = (0.5 + roughness / 2.0).powi(2);
 
     let f = schlick_fresnel_aprx(dot_lh, specular_color);
     let d = ggx_distribution(dot_nh, a2);
-    let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+    //let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+    let g = smith_for_ggx(dot_nl, dot_nv, a2);
     let brdf = (f * d * g) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
 
     let diffuse_term = Vector::vec3(1.0, 1.0, 1.0) - f;
@@ -381,11 +384,13 @@ fn compute_indirect_specular(dir: Vector, data: &ShadingData, scene: &SceneData,
             // let ga = (0.5 + data.material.roughness / 2.0).powi(2);
             let f = schlick_fresnel_aprx(dot_lh, data.material.specular);
             let d = ggx_distribution(n.vec3_dot_f32(h), a2);
-            let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+              //let g = height_correlated_smith_shadow_and_masking_for_ggx(n, l, v, a2);
+            let g = smith_for_ggx(dot_nl, dot_nv, a2);
 
             let pdf = (d * n.vec3_dot_f32(h)) / (4.0 * v.vec3_dot_f32(h).abs());
-            let brdf = (f * d * g * n.vec3_dot_f32(l).abs()) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
-            let reflectance = (brdf / pdf) * light_color;
+            // let brdf = (f * d * g * n.vec3_dot_f32(l).abs()) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
+            let brdf = (f * d * g) / (4.0 * n.vec3_dot_f32(l).abs() * n.vec3_dot_f32(v).abs());
+            let reflectance = (brdf / pdf) * light_color * dot_nl;
 
             // let weight = ((v.vec3_dot_f32(h).abs())) / (n.vec3_dot_f32(v).abs() * n.vec3_dot_f32(h).abs());
             // let reflectance = f * g * weight * light_color;

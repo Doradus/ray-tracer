@@ -91,12 +91,12 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    let settings = RenderSettings::new(1280, 720, 2, 3, 0, 8, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(1280, 720, 2, 3, 3, 3, Vector::vec3(0.7, 0.7, 0.8));
     // let settings = RenderSettings::new(1280, 720, 3, 3, 3, 8, Vector::vec3(0.0, 0.0, 0.0));
     //let settings = RenderSettings::new(1280, 720, 3, 8, 8, 8, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = gi_test();
+    let scene = spehres();
  
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
@@ -106,8 +106,8 @@ fn main() {
 
     let mut thread_info = Vec::new();
 
-    let cell_width = settings.width / x_divisions;
-    let cell_height = settings.height / y_divisions; 
+    // let cell_width = settings.width / x_divisions;
+    // let cell_height = settings.height / y_divisions; 
 
     // for y in 0..y_divisions as u32 {
     //     for x in 0..x_divisions as u32 {
@@ -121,8 +121,6 @@ fn main() {
         }
     }
 
-    println!("thread_info: {}", thread_info.len());
-
     let num_render_jobs = settings.width * settings.height;
     // let num_render_jobs = x_divisions * y_divisions;
 
@@ -130,6 +128,12 @@ fn main() {
     let threads_spawned = AtomicUsize::new(0);
 
     let now = Instant::now();
+
+    let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
+    let aspect_ratio = settings.width as f32 / settings.height as f32;
+    let fov = 40.0 * (consts::PI / 180.0); 
+    let scale = (fov * 0.5).tan();
+
     crossbeam_utils::thread::scope(|s| {
         for _ in 0..max_threads {
             s.spawn(|_| {   
@@ -142,7 +146,7 @@ fn main() {
                         break;
                     }
 
-                    render(thread_info[i], &buffer, settings, &scene, &mut stats);
+                    render(thread_info[i], &buffer, origin, aspect_ratio, scale, settings, &scene, &mut stats);
 
                 }
                 println!("thread: {}, num triangle intersects: {}", thread_num, stats.num_tringle_tests);
@@ -156,14 +160,8 @@ fn main() {
     write_to_file(&buffer);
 }
 
-fn render(info: Vector, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
-    let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
-    let aspect_ratio = settings.width as f32 / settings.height as f32;
-    let fov = 40.0 * (consts::PI / 180.0); 
-
-    let scale = (fov * 0.5).tan();
+fn render(info: Vector, buffer: & UnsafeRgbaImage, origin: Vector, aspect_ratio: f32, scale: f32, settings: RenderSettings, scene: &SceneData, stats: &mut Stats ) {
     let a = aspect_ratio * scale;
-
     let x = info.x();
     let y = info.y();
 

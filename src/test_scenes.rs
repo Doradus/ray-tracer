@@ -560,7 +560,7 @@ pub fn gi_test() -> SceneData {
         Vector::vec3(degree_to_radians(90.0), degree_to_radians(180.0), 0.0)
     );
 
-    let scene_objects = vec![cube_green, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane];
+    let scene_objects = vec![cube_green, cube_red, top_plane, bottom_plane, back_plane, wall_plane, right_plane, left_plane, sphere];
 
     let bvh_res = build_bvh(&scene_objects);
     let bvh = bvh_res.0;
