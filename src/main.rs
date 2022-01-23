@@ -90,11 +90,11 @@ struct RenderThreadInfo {
 }
 
 fn main() {
-    //let settings = RenderSettings::new(1280, 720, 2, 3, 3, 8, Vector::vec3(0.86, 0.92, 1.0));
-    let settings = RenderSettings::new(1280, 720, 2, 3, 3, 8, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(1280, 720, 2, 4, 4, 7, Vector::vec3(0.86, 0.92, 1.0));
+    //let settings = RenderSettings::new(1280, 720, 2, 3, 0, 8, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
-    let scene = gi_test();
+    let scene = spehres();
 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
