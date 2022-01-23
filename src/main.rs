@@ -91,34 +91,32 @@ struct RenderThreadInfo {
 
 fn main() {
     //let settings = RenderSettings::new(1280, 720, 2, 3, 3, 8, Vector::vec3(0.86, 0.92, 1.0));
-    let settings = RenderSettings::new(1280, 720, 2, 3, 3, 12, Vector::vec3(0.0, 0.0, 0.0));
+    let settings = RenderSettings::new(1280, 720, 2, 3, 3, 8, Vector::vec3(0.0, 0.0, 0.0));
     let buffer = UnsafeRgbaImage::new(image::RgbImage::new(settings.width, settings.height));
 
     let scene = gi_test();
 
- 
     let max_threads = num_cpus::get();
     println!("threads: {}", max_threads);
 
-    let y_divisions = 20;
-    let x_divisions = 20;
-
     let mut thread_info = Vec::new();
-
-    let cell_width = settings.width / x_divisions;
-    let cell_height = settings.height / y_divisions; 
-
-    for y in 0..x_divisions as u32 {
-        for x in 0..x_divisions as u32 {
-            thread_info.push(RenderThreadInfo {offset: (x * cell_width, y * cell_height), dimensions: (cell_width, cell_height)});
+    for y in 0..settings.height as u32 {
+        for x in 0..settings.width as u32 {
+            thread_info.push(Vector::vec2(x as f32, y as f32));
         }
     }
 
-    let num_render_jobs = x_divisions * y_divisions;
+    let num_render_jobs = settings.width * settings.height;
     let render_job_counter = AtomicUsize::new(0);
     let threads_spawned = AtomicUsize::new(0);
 
     let now = Instant::now();
+
+    let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
+    let aspect_ratio = settings.width as f32 / settings.height as f32;
+    let fov = 40.0 * (consts::PI / 180.0); 
+    let scale = (fov * 0.5).tan();
+
     crossbeam_utils::thread::scope(|s| {
         for _ in 0..max_threads {
             s.spawn(|_| {   
@@ -131,7 +129,7 @@ fn main() {
                         break;
                     }
 
-                    render(thread_info[i], &buffer, settings, &scene, &mut stats);
+                    render(thread_info[i], &buffer, origin, aspect_ratio, scale, settings, &scene, &mut stats);
 
                 }
                 println!("thread: {}, num triangle intersects: {}", thread_num, stats.num_tringle_tests);
@@ -145,34 +143,25 @@ fn main() {
     write_to_file(&buffer);
 }
 
-fn render(info: RenderThreadInfo, buffer: & UnsafeRgbaImage, settings: RenderSettings, scene: &SceneData, stats: &mut Stats) {
-    let origin = Vector::vec3(0.0, 0.0, 0.0) * scene.camera.to_world;
-    let aspect_ratio = settings.width as f32 / settings.height as f32;
-    let fov = 40.0 * (consts::PI / 180.0); 
-
-    let scale = (fov * 0.5).tan();
+fn render(info: Vector, buffer: & UnsafeRgbaImage, origin: Vector, aspect_ratio: f32, scale: f32, settings: RenderSettings, scene: &SceneData, stats: &mut Stats ) {
     let a = aspect_ratio * scale;
+    let x = info.x();
+    let y = info.y();
 
-    let end_x = info.dimensions.0 + info.offset.0;
-    let end_y = info.dimensions.1 + info.offset.1;
-    for x in info.offset.0..end_x {
-        for y in info.offset.1..end_y {
-
-            let mut color = Vector::vec3(0.0, 0.0, 0.0);
-            let sample_points = get_aa_distribution(settings.aa_samples);
-            for i in 0..sample_points.len() {
-                let p_x = (2.0 * (x as f32 + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
-                let p_y = (1.0 - 2.0 * (y as f32 + sample_points[i].1) / settings.height as f32) * scale; 
-                let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
-                let ray_dir = dir - origin;
-                color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
-            }
-
-            color /= sample_points.len() as f32;
-            color *= 255.0;
-            buffer.put_pixel(x, y, image::Rgb([color.x() as u8, color.y() as u8, color.z() as u8]));
-        }
+    let mut color = Vector::vec3(0.0, 0.0, 0.0);
+    let sample_points = get_aa_distribution(settings.aa_samples);
+    for i in 0..sample_points.len() {
+        let p_x = (2.0 * (x + sample_points[i].0) / settings.width as f32 - 1.0) * a; 
+        let p_y = (1.0 - 2.0 * (y + sample_points[i].1) / settings.height as f32) * scale; 
+        let dir = Vector::vec3(p_x, p_y, -1.0)  * scene.camera.to_world;
+        let ray_dir = dir - origin;
+        color += cast_ray(origin, ray_dir.vec3_normalize(), &scene, 0, settings, RayType::CameraRay, stats);
     }
+
+    color /= sample_points.len() as f32;
+    let output = color.clamp(Vector::vec3(0.0, 0.0, 0.0), Vector::vec3(1.0, 1.0, 1.0)) * 255.0;
+    let (r, g, b, a2) = output.into();
+    buffer.put_pixel(x as u32, y as u32, image::Rgb([r as u8, g as u8, b as u8]));
 }
 
 fn get_aa_distribution(samples: u32) -> Vec<(f32, f32)> {
