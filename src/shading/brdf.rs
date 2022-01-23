@@ -22,3 +22,10 @@ pub(crate) fn schlick_fresnel_aprx(dot_lh: f32, spec_color: Vector) -> Vector {
     let exponent = a * a * a * a * a;
     spec_color + (Vector::vec3(1.0, 1.0, 1.0) - spec_color) * exponent
 }
+
+#[inline]
+pub(crate) fn disney_diffuse_model(dot_nv: f32, dot_nl: f32, dot_nh: f32, roughness: f32) -> f32 {
+    let f90 = 0.5 + 2.0 * dot_nh * dot_nh * roughness;
+
+    (1.0 + (f90 - 1.0) * (1.0 - dot_nl).powi(5)) * (1.0 + (f90 - 1.0) * (1.0 - dot_nv).powi(5))
+}
