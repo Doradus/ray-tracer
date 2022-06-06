@@ -14,4 +14,4 @@ opt-level = 3
 rand = "0.7.2"
 image = "0.22.3"
 num_cpus = "1.11.1"
-crossbeam-utils = "0.7.0"
+crossbeam-utils = "0.8.7"
